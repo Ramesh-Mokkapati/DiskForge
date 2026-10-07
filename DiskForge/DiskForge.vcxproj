@@ -1,0 +1,220 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{B3A5F210-1234-4567-ABCD-000000000001}</ProjectGuid>
+    <RootNamespace>DiskForge</RootNamespace>
+    <Keyword>MFCProj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ApplicationType>Windows</ApplicationType>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <!-- ========== Debug x64 ========== -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+
+  <!-- ========== Release x64 ========== -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
+            Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
+            Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+
+  <!-- ========== Debug ClCompile settings ========== -->
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_AFXDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Manifest>
+      <EmbedManifest>true</EmbedManifest>
+      <AdditionalManifestFiles>$(ProjectDir)DiskForge.manifest;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EnableDpiAwareness>false</EnableDpiAwareness>
+    </Manifest>
+    <Link>
+      <UACExecutionLevel>requireAdministrator</UACExecutionLevel>
+    </Link>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+
+  <!-- ========== Release ClCompile settings ========== -->
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_AFXDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <UACExecutionLevel>requireAdministrator</UACExecutionLevel>
+    </Link>
+    <Manifest>
+      <EmbedManifest>true</EmbedManifest>
+      <AdditionalManifestFiles>$(ProjectDir)DiskForge.manifest;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EnableDpiAwareness>false</EnableDpiAwareness>
+    </Manifest>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+
+  <!-- ========== Source files ========== -->
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="DiskForge.cpp" />
+    <ClCompile Include="DiskForgeDlg.cpp" />
+    <ClCompile Include="DiskManager.cpp" />
+    <ClCompile Include="HexView.cpp" />
+    <ClCompile Include="SidebarButton.cpp" />
+    <ClCompile Include="PartitionParser.cpp" />
+    <ClCompile Include="PartitionDialog.cpp" />
+    <ClCompile Include="SystemDiskGuard.cpp" />
+    <ClCompile Include="VolumeLockHelper.cpp" />
+    <ClCompile Include="DiskCopyEngine.cpp" />
+    <ClCompile Include="ConfirmTextDialog.cpp" />
+    <ClCompile Include="DiskCopyDialog.cpp" />
+    <ClCompile Include="BadSectorScanner.cpp" />
+    <ClCompile Include="ScanMapView.cpp" />
+    <ClCompile Include="BadSectorScanDialog.cpp" />
+    <ClCompile Include="SmartDataReader.cpp" />
+    <ClCompile Include="SmartHealthDialog.cpp" />
+    <ClCompile Include="MbrGptConverter.cpp" />
+    <ClCompile Include="MbrGptConvertDialog.cpp" />
+    <ClCompile Include="PartitionEditor.cpp" />
+    <ClCompile Include="PartitionEditDialog.cpp" />
+    <ClCompile Include="ExtendPartitionDialog.cpp" />
+    <ClCompile Include="WipeEngine.cpp" />
+    <ClCompile Include="WipeDiskDialog.cpp" />
+    <ClCompile Include="SectorRepairer.cpp" />
+    <ClCompile Include="EfiBootManager.cpp" />
+    <ClCompile Include="EfiBootDialog.cpp" />
+    <ClCompile Include="LostPartitionScanner.cpp" />
+    <ClCompile Include="LostPartitionDialog.cpp" />
+    <ClCompile Include="Fat32Reader.cpp" />
+    <ClCompile Include="FileRecoveryDialog.cpp" />
+    <ClCompile Include="FileUnlocker.cpp" />
+    <ClCompile Include="FileUnlockerDialog.cpp" />
+    <ClCompile Include="StartupManagerDialog.cpp" />
+    <ClCompile Include="RegistryScanner.cpp" />
+    <ClCompile Include="RegistryScannerDialog.cpp" />
+    <ClCompile Include="NavTreeView.cpp" />
+    <ClCompile Include="MainFrame.cpp" />
+    <ClCompile Include="DiskForgeDoc.cpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="DiskForge.h" />
+    <ClInclude Include="DiskForgeDlg.h" />
+    <ClInclude Include="DiskManager.h" />
+    <ClInclude Include="HexView.h" />
+    <ClInclude Include="SidebarButton.h" />
+    <ClInclude Include="PartitionParser.h" />
+    <ClInclude Include="PartitionDialog.h" />
+    <ClInclude Include="SystemDiskGuard.h" />
+    <ClInclude Include="VolumeLockHelper.h" />
+    <ClInclude Include="DiskCopyEngine.h" />
+    <ClInclude Include="ConfirmTextDialog.h" />
+    <ClInclude Include="DiskCopyDialog.h" />
+    <ClInclude Include="BadSectorScanner.h" />
+    <ClInclude Include="ScanMapView.h" />
+    <ClInclude Include="BadSectorScanDialog.h" />
+    <ClInclude Include="SmartDataReader.h" />
+    <ClInclude Include="SmartHealthDialog.h" />
+    <ClInclude Include="MbrGptConverter.h" />
+    <ClInclude Include="MbrGptConvertDialog.h" />
+    <ClInclude Include="PartitionEditor.h" />
+    <ClInclude Include="PartitionEditDialog.h" />
+    <ClInclude Include="ExtendPartitionDialog.h" />
+    <ClInclude Include="WipeEngine.h" />
+    <ClInclude Include="WipeDiskDialog.h" />
+    <ClInclude Include="SectorRepairer.h" />
+    <ClInclude Include="EfiBootManager.h" />
+    <ClInclude Include="EfiBootDialog.h" />
+    <ClInclude Include="LostPartitionScanner.h" />
+    <ClInclude Include="LostPartitionDialog.h" />
+    <ClInclude Include="Fat32Reader.h" />
+    <ClInclude Include="FileRecoveryDialog.h" />
+    <ClInclude Include="FileUnlocker.h" />
+    <ClInclude Include="FileUnlockerDialog.h" />
+    <ClInclude Include="StartupManagerDialog.h" />
+    <ClInclude Include="RegistryScanner.h" />
+    <ClInclude Include="RegistryScannerDialog.h" />
+    <ClInclude Include="NavTreeView.h" />
+    <ClInclude Include="MainFrame.h" />
+    <ClInclude Include="DiskForgeDoc.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ResourceCompile Include="DiskForge.rc" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="DiskForge.manifest" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+</Project>

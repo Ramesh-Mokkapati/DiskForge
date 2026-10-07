@@ -1,0 +1,57 @@
+# Visual Studio
+.vs/
+*.user
+*.aps
+*.ncb
+*.sdf
+*.opensdf
+*.suo
+*.cache
+ipch/
+
+# Build output
+[Dd]ebug/
+[Rr]elease/
+x64/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+
+# Compiled object files
+*.obj
+*.pch
+*.pdb
+*.idb
+*.ilk
+*.exp
+*.lib
+*.map
+*.sbr
+*.bsc
+
+# Resource compiler
+*.res
+
+# IntelliSense
+*.VC.db
+*.VC.opendb
+*.ipch
+
+# Build logs
+*.log
+*.tlog
+*.lastbuildstate
+BuildLog.htm
+
+# Backup files
+*- Backup.*
+*.bak
+*~
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

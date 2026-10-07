@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+    tags:     ["v*.*.*"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Compile Debug and Release on every push / PR
+  # -------------------------------------------------------------------------
+  build:
+    name: ${{ matrix.configuration }}|x64
+    runs-on: windows-2022
+
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v3
+        # Locates the VS 2022 MSBuild on windows-2022 and adds it to PATH.
+        # The windows-2022 runner ships the "Desktop development with C++"
+        # workload, which includes MFC (v143 build tools + ATL/MFC component).
+
+      - name: Build ${{ matrix.configuration }} x64
+        run: |
+          msbuild DiskForge.sln `
+            /p:Configuration=${{ matrix.configuration }} `
+            /p:Platform=x64 `
+            /m `
+            /v:minimal `
+            /nologo
+
+      - name: Upload ${{ matrix.configuration }} artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.configuration }}-x64
+          path: x64\${{ matrix.configuration }}\DiskForge.exe
+          if-no-files-found: error
+          retention-days: 30
+
+  # -------------------------------------------------------------------------
+  # Attach the Release exe to a GitHub Release when a v*.*.* tag is pushed.
+  # Runs only after both build matrix legs succeed.
+  # -------------------------------------------------------------------------
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write       # required to create / update a GitHub Release
+
+    steps:
+      - name: Download Release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Release-x64
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: DiskForge.exe
+          generate_release_notes: true   # auto-generates notes from merged PRs / commits

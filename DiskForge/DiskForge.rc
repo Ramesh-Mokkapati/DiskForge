@@ -1,0 +1,527 @@
+// DiskForge.rc - Application resources
+#include "resource.h"
+#include <winres.h>
+#include "afxres.h"
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+// MFC SDI document string (IDR_MAINFRAME)
+// Format: title\nshortTitle\nfilterName\nfilterExt\nRegFileTypeId\nRegFileTypeName\nFilterName
+STRINGTABLE
+BEGIN
+    IDR_MAINFRAME "DiskForge\nDiskForge\nDiskForge\n\n\nDiskForge.Document\nDiskForge Document"
+END
+
+// Minimal menu — required by CFrameWnd::LoadFrame (returns FALSE without one)
+IDR_MAINFRAME MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "E&xit",  ID_APP_EXIT
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About DiskForge...", ID_APP_ABOUT
+    END
+END
+
+// -------------------------------------------------------------------------
+// IDD_MAIN  (CDiskForgeDlg : CFormView)
+// Style MUST be DS_SETFONT|WS_CHILD — CFormView requires this; CMainFrame
+// provides the caption, borders and menu bar.
+// -------------------------------------------------------------------------
+// Right-pane content: hex viewer + drive/sector controls.
+// Sidebar removed — navigation is now in the left splitter pane (CNavTreeView).
+IDD_MAIN DIALOGEX 0, 0, 460, 560
+STYLE DS_SETFONT | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    // --- Drive-selection row (y=8)
+    COMBOBOX        IDC_COMBO_DRIVES,    8,  8, 218, 200, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    PUSHBUTTON      "Refresh",           IDC_BTN_REFRESH,    234,  8,  90, 26
+    PUSHBUTTON      "Open Drive",        IDC_BTN_OPEN,       334,  8, 100, 26
+
+    // --- Drive info (y=44, h=48)
+    LTEXT           "", IDC_STATIC_DRIVEINFO, 8, 44, 444, 48
+
+    // --- Sector navigation row (y=104)
+    LTEXT           "Sector #",          IDC_STATIC,          8, 108,  52, 14
+    EDITTEXT        IDC_EDIT_SECTOR,                         64, 104,  80, 24, ES_NUMBER|ES_AUTOHSCROLL
+    PUSHBUTTON      "Go to Sector",      IDC_BTN_GOTO,       148, 104,  80, 24
+    PUSHBUTTON      "|<",                IDC_BTN_FIRST,      232, 104,  48, 24
+    PUSHBUTTON      "<",                 IDC_BTN_PREV,       284, 104,  48, 24
+    PUSHBUTTON      ">",                 IDC_BTN_NEXT,       336, 104,  48, 24
+    PUSHBUTTON      ">|",               IDC_BTN_LAST,       388, 104,  48, 24
+
+    // Sector-info label; LayoutControls repositions it to R-200, y=104
+    LTEXT           "", IDC_STATIC_SECTOR, 152, 130, 284, 14
+
+    // --- HexView placeholder; OnInitialUpdate destroys and replaces with CHexView
+    LTEXT           "", IDC_HEXVIEW, 8, 140, 444, 350
+
+    // --- Progress bar
+    CONTROL         "", IDC_PROGRESS, "msctls_progress32", PBS_SMOOTH|WS_CHILD|WS_VISIBLE, 8, 498, 444, 12
+
+    // --- Status bar
+    LTEXT           "", IDC_STATIC_STATUS, 8, 518, 444, 20
+END
+
+// -------------------------------------------------------------------------
+// IDD_PARTITIONS  (CPartitionDialog)
+// -------------------------------------------------------------------------
+IDD_PARTITIONS DIALOGEX 0, 0, 434, 258
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Partition Table"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "", IDC_PART_STATIC_SUMMARY,   5,   5, 425, 22
+    CONTROL         "", IDC_PART_LIST, "SysListView32",
+                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+                    5, 31, 425, 202
+    PUSHBUTTON      "Go to Sector",  IDC_PART_BTN_GOTO,    5, 238,  91, 16
+    PUSHBUTTON      "Close",         IDC_PART_BTN_CLOSE, 377, 238,  53, 16
+END
+
+// -------------------------------------------------------------------------
+// IDD_CONFIRM_TEXT  (CConfirmTextDialog)  — fixed-size, no resize
+// -------------------------------------------------------------------------
+IDD_CONFIRM_TEXT DIALOGEX 0, 0, 297, 148
+STYLE DS_SETFONT | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Confirm"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "", IDC_CONFIRM_STATIC_MSG,   7,   7, 283, 62, SS_LEFT|SS_SUNKEN
+    LTEXT           "", IDC_CONFIRM_STATIC_HINT,  7,  74, 283, 18
+    EDITTEXT        IDC_CONFIRM_EDIT,             7,  97, 283, 15, ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",     IDC_CONFIRM_BTN_OK,     201, 121,  40, 16
+    PUSHBUTTON      "Cancel", IDC_CONFIRM_BTN_CANCEL, 246, 121,  45, 16
+END
+
+// -------------------------------------------------------------------------
+// IDD_DISKCOPY  (CDiskCopyDialog)
+// -------------------------------------------------------------------------
+IDD_DISKCOPY DIALOGEX 0, 0, 430, 310
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Disk Copy"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Source:",  IDC_DC_STATIC_SRC_HDR, 8, 6, 36, 14
+    AUTORADIOBUTTON "Drive/Image file", IDC_DC_RADIO_SRC_TYPE_DRIVE, 46, 6, 100, 14, WS_GROUP
+    AUTORADIOBUTTON "File",             IDC_DC_RADIO_SRC_TYPE_FILE, 150, 6,  50, 14
+    COMBOBOX        IDC_DC_COMBO_SRC,     8, 24, 280, 120, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    EDITTEXT        IDC_DC_EDIT_SRC_FILE, 8, 24, 220,  14, ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse...",     IDC_DC_BTN_BROWSE_SRC,  236, 24,  52, 14
+    AUTORADIOBUTTON "Whole disk",       IDC_DC_RADIO_SRC_WHOLE,   8, 44, 80, 14, WS_GROUP
+    AUTORADIOBUTTON "Single partition", IDC_DC_RADIO_SRC_PART,   96, 44, 90, 14
+    PUSHBUTTON      "Choose Partition...", IDC_DC_BTN_CHOOSE_PART, 190, 42, 100, 16
+    LTEXT           "", IDC_DC_STATIC_PART,  8, 62, 414, 12
+    LTEXT           "Destination:", IDC_DC_STATIC_DST_HDR, 8, 76, 60, 14
+    AUTORADIOBUTTON "Physical drive", IDC_DC_RADIO_DST_DISK,   8, 90,  80, 14, WS_GROUP
+    AUTORADIOBUTTON "Image file",     IDC_DC_RADIO_DST_FILE,  96, 90,  70, 14
+    COMBOBOX        IDC_DC_COMBO_DST,     8, 108, 280, 120, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    EDITTEXT        IDC_DC_EDIT_DST_FILE, 8, 108, 220,  14, ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse...",     IDC_DC_BTN_BROWSE,     236, 108,  52, 14
+    AUTORADIOBUTTON "Whole disk",       IDC_DC_RADIO_DST_WHOLE,   8, 126, 80, 14, WS_GROUP
+    AUTORADIOBUTTON "Single partition", IDC_DC_RADIO_DST_PART,   96, 126, 90, 14
+    PUSHBUTTON      "Choose Partition...", IDC_DC_BTN_CHOOSE_DST_PART, 190, 124, 120, 16
+    LTEXT           "", IDC_DC_STATIC_DST_PART,   8, 142, 414, 12
+    PUSHBUTTON      "Refresh Drive List", IDC_DC_BTN_REFRESH, 8, 158, 100, 16
+    LTEXT           "", IDC_DC_STATIC_SUMMARY,    8, 180, 414, 36
+    CONTROL         "", IDC_DC_PROGRESS, "msctls_progress32", PBS_SMOOTH|WS_CHILD|WS_VISIBLE,
+                     8, 222, 414, 12
+    LTEXT           "", IDC_DC_STATIC_STATUS,     8, 238, 414, 12
+    PUSHBUTTON      "Start Copy...", IDC_DC_BTN_START,    8, 258,  90, 16
+    PUSHBUTTON      "Cancel Copy",  IDC_DC_BTN_CANCEL,  102, 258,  80, 16
+    PUSHBUTTON      "Close",        IDC_DC_BTN_CLOSE,   372, 258,  50, 16
+END
+
+// -------------------------------------------------------------------------
+// IDD_BADSECTORSCAN  (CBadSectorScanDialog)
+// IDC_BSS_STATIC_MAP is a placeholder LTEXT; OnInitDialog destroys it and
+// creates the real CScanMapView at the same rect.
+// -------------------------------------------------------------------------
+IDD_BADSECTORSCAN DIALOGEX 0, 0, 400, 320
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Bad Sector Scan"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Drive:", IDC_STATIC, 7, 7, 29, 9
+    COMBOBOX        IDC_BSS_COMBO_DRIVE, 7, 18, 386, 123, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    AUTORADIOBUTTON "Whole disk",       IDC_BSS_RADIO_WHOLE,   7, 38,  57, 11, WS_GROUP
+    AUTORADIOBUTTON "Single partition", IDC_BSS_RADIO_PART,   70, 38,  80, 11
+    AUTORADIOBUTTON "LBA range",        IDC_BSS_RADIO_RANGE, 155, 38,  74, 11
+    PUSHBUTTON      "Choose Partition...", IDC_BSS_BTN_CHOOSE_PART,   7, 53,  80, 15
+    LTEXT           "Start:",  IDC_BSS_STATIC_RANGE_START_LBL,  7, 55,  51, 10
+    EDITTEXT        IDC_BSS_EDIT_RANGE_START,                  59, 54,  62, 12
+    LTEXT           "Count:",  IDC_BSS_STATIC_RANGE_COUNT_LBL, 127, 55,  51, 10
+    EDITTEXT        IDC_BSS_EDIT_RANGE_COUNT,                  179, 54,  67, 12
+    LTEXT           "", IDC_BSS_STATIC_PART, 7, 71, 386, 10
+    LTEXT           "Sector Map:", IDC_STATIC, 7, 86, 46, 9
+    LTEXT           "", IDC_BSS_STATIC_MAP, 7, 96, 386, 62
+    LTEXT           "", IDC_BSS_STATIC_STATUS, 7, 161, 386, 11
+    LTEXT           "Bad Sectors:", IDC_STATIC, 7, 176, 46, 9
+    CONTROL         "", IDC_BSS_LIST_BAD, "SysListView32",
+                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+                    7, 187, 386, 106
+    PUSHBUTTON      "Start Scan",        IDC_BSS_BTN_START,    7, 299,  63, 16
+    PUSHBUTTON      "Stop",              IDC_BSS_BTN_STOP,    75, 299,  63, 16
+    PUSHBUTTON      "Attempt Repair...", IDC_BSS_BTN_REPAIR,  144, 299,  91, 16
+    PUSHBUTTON      "Close",             IDC_BSS_BTN_CLOSE,   342, 299,  51, 16
+END
+
+// -------------------------------------------------------------------------
+// IDD_SMARTHEALTH  (CSmartHealthDialog)
+// -------------------------------------------------------------------------
+IDD_SMARTHEALTH DIALOGEX 0, 0, 366, 283
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Disk Health"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Drive:", IDC_STATIC, 7, 7, 29, 10
+    COMBOBOX        IDC_SH_COMBO_DRIVE, 41, 6, 192, 123, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    PUSHBUTTON      "Refresh",      IDC_SH_BTN_REFRESH, 239, 6, 60, 14
+    PUSHBUTTON      "Check Health", IDC_SH_BTN_CHECK,   302, 6, 57, 14
+    LTEXT           "", IDC_SH_STATIC_OVERALL, 7, 26, 352, 22
+    CONTROL         "", IDC_SH_LIST_ATTRIBUTES, "SysListView32",
+                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+                    7, 52, 352, 191
+    LTEXT           "", IDC_SH_STATIC_CAVEAT, 7, 247, 352, 15
+    PUSHBUTTON      "Close", IDC_SH_BTN_CLOSE, 307, 265, 51, 15
+END
+
+// -------------------------------------------------------------------------
+// IDD_MBRGPTCONVERT  (CMbrGptConvertDialog)
+// -------------------------------------------------------------------------
+IDD_MBRGPTCONVERT DIALOGEX 0, 0, 400, 295
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Convert MBR to GPT"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Drive:", IDC_STATIC, 7, 7, 29, 10
+    COMBOBOX        IDC_MG_COMBO_DRIVE, 38, 6, 281, 123, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    PUSHBUTTON      "Analyze Disk", IDC_MG_BTN_ANALYZE, 325, 6, 69, 14
+    CONTROL         "", IDC_MG_LIST_PARTITIONS, "SysListView32",
+                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+                    7, 26, 386, 79
+    LTEXT           "", IDC_MG_STATIC_RESULT, 7, 108, 386, 30
+    PUSHBUTTON      "Save Backup...",         IDC_MG_BTN_SAVE_BACKUP,   7, 144,  91, 17
+    LTEXT           "", IDC_MG_STATIC_BACKUP, 103, 146, 290, 14
+    PUSHBUTTON      "Convert to GPT...",      IDC_MG_BTN_CONVERT,       7, 169,  91, 17
+    PUSHBUTTON      "Restore From Backup...", IDC_MG_BTN_RESTORE,       7, 193, 103, 17
+    PUSHBUTTON      "Close", IDC_MG_BTN_CLOSE, 342, 274, 51, 16
+END
+
+// -------------------------------------------------------------------------
+// IDD_PARTITIONEDIT  (CPartitionEditDialog)
+// -------------------------------------------------------------------------
+IDD_PARTITIONEDIT DIALOGEX 0, 0, 434, 345
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Partition Editor"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Drive:", IDC_STATIC, 7, 7, 29, 9
+    COMBOBOX        IDC_PE_COMBO_DRIVE, 38, 6, 343, 123, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    PUSHBUTTON      "Load Partitions", IDC_PE_BTN_LOAD, 386, 6, 41, 14
+
+    CONTROL         "", IDC_PE_LIST_PARTITIONS, "SysListView32",
+                    LVS_REPORT|LVS_SHOWSELALWAYS|LVS_SINGLESEL|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+                    7, 26, 421, 98
+
+    // --- MBR edit controls (left column) ---
+    AUTOCHECKBOX    "Active/Bootable",   IDC_PE_CHK_MBR_ACTIVE,    7, 132, 91, 11
+    LTEXT           "MBR Type:", IDC_STATIC,                        7, 146, 43,  9
+    COMBOBOX        IDC_PE_COMBO_MBR_TYPE, 53, 144, 143, 123, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    AUTOCHECKBOX    "Hidden partition",  IDC_PE_CHK_MBR_HIDDEN,     7, 159, 91, 11
+
+    // --- GPT edit controls (right column) ---
+    LTEXT           "GPT Name:", IDC_STATIC, 206, 132, 40, 9
+    EDITTEXT        IDC_PE_EDIT_GPT_NAME, 248, 129, 179, 14, ES_AUTOHSCROLL
+    LTEXT           "GPT Type:", IDC_STATIC, 206, 146, 40, 9
+    COMBOBOX        IDC_PE_COMBO_GPT_TYPE, 248, 144, 179, 123, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    AUTOCHECKBOX    "Legacy boot attribute",  IDC_PE_CHK_GPT_LEGACY_BOOT, 206, 159, 114, 11
+    AUTOCHECKBOX    "No auto-assign letter",  IDC_PE_CHK_GPT_NO_LETTER,   206, 172, 114, 11
+
+    // --- Apply / status ---
+    PUSHBUTTON      "Apply Changes", IDC_PE_BTN_APPLY,    7, 190,  80, 17
+    LTEXT           "", IDC_PE_STATIC_STATUS,              7, 213, 421, 22
+
+    // --- Drive-letter assignment ---
+    LTEXT           "Current letter:", IDC_STATIC,          7, 242,  57,  9
+    LTEXT           "", IDC_PE_STATIC_CUR_LETTER,           66, 242,  34,  9
+    LTEXT           "Assign letter:", IDC_STATIC,            7, 256,  46,  9
+    COMBOBOX        IDC_PE_COMBO_NEW_LETTER,                55, 254,  46, 123, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    PUSHBUTTON      "Assign Letter",  IDC_PE_BTN_ASSIGN_LETTER, 105, 254,  74, 16
+    PUSHBUTTON      "Remove Letter",  IDC_PE_BTN_REMOVE_LETTER, 184, 254,  74, 16
+
+    // --- Bottom action buttons ---
+    PUSHBUTTON      "Delete Partition",  IDC_PE_BTN_DELETE,   7, 321,  80, 17
+    PUSHBUTTON      "Extend Partition",  IDC_PE_BTN_EXTEND,  93, 321,  80, 17
+    PUSHBUTTON      "Close",             IDC_PE_BTN_CLOSE,  370, 321,  57, 17
+END
+
+// -------------------------------------------------------------------------
+// IDD_WIPEDISK  (CWipeDiskDialog)
+// -------------------------------------------------------------------------
+IDD_WIPEDISK DIALOGEX 0, 0, 389, 258
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Wipe Disk / Partition"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Drive:", IDC_STATIC, 7, 7, 29, 10
+    COMBOBOX        IDC_WD_COMBO_DRIVE, 38, 6, 343, 123, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    AUTORADIOBUTTON "Whole disk",       IDC_WD_RADIO_WHOLE,   7, 25,  57, 11, WS_GROUP
+    AUTORADIOBUTTON "Single partition", IDC_WD_RADIO_PART,   70, 25,  80, 11
+    PUSHBUTTON      "Choose Partition...", IDC_WD_BTN_CHOOSE_PART, 155, 22,  80, 16
+    LTEXT           "", IDC_WD_STATIC_PART, 7, 41, 375, 11
+    LTEXT           "Pattern:", IDC_STATIC, 7, 59, 34, 10
+    COMBOBOX        IDC_WD_COMBO_PATTERN, 44, 58, 157, 123, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    PUSHBUTTON      "Refresh Drive List", IDC_WD_BTN_REFRESH, 7, 75, 86, 15
+    LTEXT           "", IDC_WD_STATIC_SUMMARY, 7, 94, 375, 42
+    CONTROL         "", IDC_WD_PROGRESS, "msctls_progress32", PBS_SMOOTH|WS_CHILD|WS_VISIBLE,
+                    7, 139, 375, 11
+    LTEXT           "Ready.", IDC_WD_STATIC_STATUS, 7, 154, 375, 11
+    PUSHBUTTON      "Start Wipe...", IDC_WD_BTN_START,    7, 234,  74, 17
+    PUSHBUTTON      "Cancel Wipe",  IDC_WD_BTN_CANCEL,  87, 234,  69, 17
+    PUSHBUTTON      "Close",        IDC_WD_BTN_CLOSE,  330, 234,  51, 17
+END
+
+// -------------------------------------------------------------------------
+// IDD_EFIBOOT  (CEfiBootDialog)
+// -------------------------------------------------------------------------
+IDD_EFIBOOT DIALOGEX 0, 0, 366, 271
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "UEFI Boot Entry Manager"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "", IDC_EB_LIST_ENTRIES, "SysListView32",
+                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+                    7, 7, 266, 217
+    PUSHBUTTON      "Move Up",          IDC_EB_BTN_MOVE_UP,     274,   7, 85, 14
+    PUSHBUTTON      "Move Down",        IDC_EB_BTN_MOVE_DOWN,   274,  23, 85, 14
+    PUSHBUTTON      "Apply Order",      IDC_EB_BTN_APPLY_ORDER, 274,  39, 85, 14
+    PUSHBUTTON      "Set as Next Boot", IDC_EB_BTN_SET_NEXT,    274,  69, 85, 14
+    PUSHBUTTON      "Clear Next Boot",  IDC_EB_BTN_CLEAR_NEXT,  274,  85, 85, 14
+    PUSHBUTTON      "Delete Entry",     IDC_EB_BTN_DELETE,      274, 114, 85, 14
+    PUSHBUTTON      "Refresh",          IDC_EB_BTN_REFRESH,     274, 144, 85, 14
+    LTEXT           "", IDC_EB_STATIC_STATUS, 7, 229, 352, 17
+    PUSHBUTTON      "Close", IDC_EB_BTN_CLOSE, 307, 251, 51, 15
+END
+
+// -------------------------------------------------------------------------
+// IDD_LOSTPARTITION  (CLostPartitionDialog)
+// -------------------------------------------------------------------------
+IDD_LOSTPARTITION DIALOGEX 0, 0, 411, 283
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Lost Partition Search"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Drive:", IDC_STATIC, 7, 7, 29, 9
+    COMBOBOX        IDC_LP_COMBO_DRIVE, 38, 6, 366, 123, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    LTEXT           "", IDC_LP_STATIC_FREESPACE,    7,  25, 398, 20
+    CONTROL         "", IDC_LP_LIST_CANDIDATES, "SysListView32",
+                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+                    7, 48, 398, 174
+    CONTROL         "", IDC_LP_PROGRESS, "msctls_progress32", PBS_SMOOTH|WS_CHILD|WS_VISIBLE,
+                    7, 226, 398, 11
+    LTEXT           "", IDC_LP_STATIC_STATUS, 7, 241, 398, 17
+    PUSHBUTTON      "Start Search", IDC_LP_BTN_START,    7, 262,  63, 16
+    PUSHBUTTON      "Stop",         IDC_LP_BTN_STOP,    75, 262,  63, 16
+    PUSHBUTTON      "Close",        IDC_LP_BTN_CLOSE,  353, 262,  51, 16
+END
+
+// -------------------------------------------------------------------------
+// IDD_FILERECOVERY  (CFileRecoveryDialog)
+// -------------------------------------------------------------------------
+IDD_FILERECOVERY DIALOGEX 0, 0, 400, 320
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Recover Deleted Files"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Drive:", IDC_STATIC, 7, 7, 29, 9
+    COMBOBOX        IDC_FR_COMBO_DRIVE, 38, 6, 269, 123, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
+    PUSHBUTTON      "Choose Partition...", IDC_FR_BTN_CHOOSE_PART, 313, 6, 80, 14
+    LTEXT           "", IDC_FR_STATIC_PART, 7, 23, 386, 10
+    LTEXT           "Custom LBA Start:", IDC_STATIC, 7, 38, 69, 9
+    EDITTEXT        IDC_FR_EDIT_CUSTOM_LBA, 78, 36, 78, 12, ES_NUMBER|ES_AUTOHSCROLL
+    PUSHBUTTON      "Open Root...", IDC_FR_BTN_OPEN, 161, 36, 74, 14
+    CONTROL         "", IDC_FR_TREE, "SysTreeView32",
+                    TVS_HASLINES|TVS_HASBUTTONS|TVS_LINESATROOT|TVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+                    7, 54, 386, 207
+    LTEXT           "", IDC_FR_STATIC_INFO, 7, 265, 386, 17
+    PUSHBUTTON      "Recover Selected...", IDC_FR_BTN_RECOVER,    7, 286, 103, 15
+    LTEXT           "", IDC_FR_STATIC_STATUS,                   115, 288, 278, 12
+    PUSHBUTTON      "Close", IDC_FR_BTN_CLOSE, 342, 304, 51, 16
+END
+
+// -------------------------------------------------------------------------
+// IDD_FILEUNLOCKER  (CFileUnlockerDialog)
+// -------------------------------------------------------------------------
+IDD_FILEUNLOCKER DIALOGEX 0, 0, 354, 258
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "File Unlocker"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_FU_EDIT_FILE_PATH,    7,   7, 289, 14, ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse...", IDC_FU_BTN_BROWSE, 302, 7, 46, 14
+    CONTROL         "", IDC_FU_LIST_LOCKERS, "SysListView32",
+                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+                    7, 26, 341, 174
+    LTEXT           "", IDC_FU_STATIC_STATUS, 7, 203, 341, 14
+    PUSHBUTTON      "Refresh",       IDC_FU_BTN_REFRESH,        7, 222,  63, 16
+    PUSHBUTTON      "Kill Selected", IDC_FU_BTN_KILL_SELECTED,  75, 222,  74, 16
+    PUSHBUTTON      "Kill All",      IDC_FU_BTN_KILL_ALL,      155, 222,  69, 16
+    PUSHBUTTON      "Close",         IDC_FU_BTN_CLOSE,         296, 238,  51, 16
+END
+
+// -------------------------------------------------------------------------
+// IDD_EXTENDPARTITION  (CExtendPartitionDialog)  — fixed-size, no resize
+// -------------------------------------------------------------------------
+IDD_EXTENDPARTITION DIALOGEX 0, 0, 286, 172
+STYLE DS_SETFONT | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Extend Partition"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "", IDC_EX_STATIC_INFO,    7,   7, 272, 10
+    LTEXT           "Current size:",   IDC_STATIC,   7,  26,  57,  9
+    LTEXT           "", IDC_EX_STATIC_CUR,    67,  23, 212, 10
+    LTEXT           "Available free:", IDC_STATIC,   7,  39,  74,  9
+    LTEXT           "", IDC_EX_STATIC_AVAIL,  84,  37, 195, 10
+    LTEXT           "Extend by (MB):", IDC_STATIC,   7,  58,  69,  9
+    EDITTEXT        IDC_EX_EDIT_MB,                 78,  55,  60, 12, ES_NUMBER|ES_AUTOHSCROLL
+    LTEXT           "", IDC_EX_STATIC_MAXHINT,      144,  58, 135, 10
+    LTEXT           "", IDC_EX_STATIC_STATUS,         7,  73, 272, 18
+    PUSHBUTTON      "Extend", IDC_EX_BTN_EXTEND, 165, 150,  53, 16
+    PUSHBUTTON      "Cancel", IDC_EX_BTN_CANCEL, 223, 150,  56, 16
+END
+
+// -------------------------------------------------------------------------
+// IDD_STARTUPMANAGER  (CStartupManagerDialog)
+// -------------------------------------------------------------------------
+IDD_STARTUPMANAGER DIALOGEX 0, 0, 400, 258
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Startup Manager"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "", IDC_SM_LIST, "SysListView32",
+                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+                    5, 5, 391, 217
+    PUSHBUTTON      "Add Entry...",  IDC_SM_BTN_ADD,       5, 230,  57, 17
+    PUSHBUTTON      "Delete",        IDC_SM_BTN_DELETE,   66, 230,  57, 17
+    PUSHBUTTON      "Enable/Disable",IDC_SM_BTN_TOGGLE,  128, 230,  74, 17
+    PUSHBUTTON      "Refresh",       IDC_SM_BTN_REFRESH, 207, 230,  57, 17
+    PUSHBUTTON      "Close",         IDC_SM_BTN_CLOSE,   338, 230,  57, 17
+    LTEXT           "", IDC_SM_STATIC_STATUS, 5, 247, 391, 10
+END
+
+// -------------------------------------------------------------------------
+// IDD_ADDSTARTUPENTRY  (CAddStartupEntryDialog)  — fixed-size, no resize
+// -------------------------------------------------------------------------
+IDD_ADDSTARTUPENTRY DIALOGEX 0, 0, 240, 121
+STYLE DS_SETFONT | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Add Startup Entry"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Name:",    IDC_AS_STATIC_NAME,  9,  14,  41, 12
+    EDITTEXT        IDC_AS_EDIT_NAME,                53,  14, 178, 12, ES_AUTOHSCROLL
+    LTEXT           "Command:", IDC_AS_STATIC_CMD,    9,  34,  41, 12
+    EDITTEXT        IDC_AS_EDIT_CMD,                 53,  34, 139, 12, ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse...", IDC_AS_BTN_BROWSE, 195,  34,  35, 12
+    LTEXT           "Hive:", IDC_STATIC,              9,  59,  40,  9
+    AUTORADIOBUTTON "HKCU (current user)", IDC_AS_RADIO_HKCU,  53, 57,  94, 14, WS_GROUP
+    AUTORADIOBUTTON "HKLM (all users)",    IDC_AS_RADIO_HKLM, 152, 57,  79, 14
+    AUTOCHECKBOX    "Run once (delete after first run)", IDC_AS_CHK_RUNONCE,  9, 76, 222, 12
+    PUSHBUTTON      "Add",    IDC_AS_BTN_ADD,    159, 101, 34, 12
+    PUSHBUTTON      "Cancel", IDC_AS_BTN_CANCEL, 198, 101, 33, 12
+END
+
+// -------------------------------------------------------------------------
+// IDD_REGISTRYSCANNER  (CRegistryScannerDialog)
+// -------------------------------------------------------------------------
+IDD_REGISTRYSCANNER DIALOGEX 0, 0, 457, 332
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Registry Scanner"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    // Row 1 (alphabetical A-F)
+    AUTOCHECKBOX "App Paths",          IDC_RS_CHK_APPPATH,           5,  6, 87, 12
+    AUTOCHECKBOX "Browser Helper",     IDC_RS_CHK_BROWSER_HELPER,   94,  6, 87, 12
+    AUTOCHECKBOX "File Extensions",    IDC_RS_CHK_FILE_EXT,         183,  6, 87, 12
+    AUTOCHECKBOX "Firewall Rules",     IDC_RS_CHK_FIREWALL,         272,  6, 87, 12
+    AUTOCHECKBOX "Fonts",              IDC_RS_CHK_FONTS,            361,  6, 91, 12
+    // Row 2 (H-S)
+    AUTOCHECKBOX "Help Files",         IDC_RS_CHK_HELP_FILES,         5, 20, 87, 12
+    AUTOCHECKBOX "Installers",         IDC_RS_CHK_INSTALLERS,        94, 20, 87, 12
+    AUTOCHECKBOX "Interface (COM)",    IDC_RS_CHK_INTERFACE,         183, 20, 87, 12
+    AUTOCHECKBOX "MUI Cache",          IDC_RS_CHK_MUI_CACHE,         272, 20, 87, 12
+    AUTOCHECKBOX "Shared DLLs",        IDC_RS_CHK_SHAREDDLL,         361, 20, 91, 12
+    // Row 3 (O-W)
+    AUTOCHECKBOX "Obsolete Software",  IDC_RS_CHK_UNINSTALL,           5, 34, 87, 12
+    AUTOCHECKBOX "Open With Apps",     IDC_RS_CHK_OPEN_WITH,          94, 34, 87, 12
+    AUTOCHECKBOX "Run At Startup",     IDC_RS_CHK_STARTUP,           183, 34, 87, 12
+    AUTOCHECKBOX "Sound Events",       IDC_RS_CHK_SOUND_EVENTS,      272, 34, 87, 12
+    AUTOCHECKBOX "Windows Services",   IDC_RS_CHK_SERVICES,          361, 34, 91, 12
+    // Scan button and progress bar
+    PUSHBUTTON      "Scan", IDC_RS_BTN_SCAN,  5, 51,  57, 15
+    LTEXT           "", IDC_RS_STATIC_PROGRESS, 66, 51,  77, 15
+    CONTROL         "", IDC_RS_PROGRESS, "msctls_progress32", PBS_SMOOTH|WS_CHILD|WS_VISIBLE,
+                    147, 54, 305, 10
+    // Results list
+    CONTROL         "", IDC_RS_LIST, "SysListView32",
+                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+                    5, 71, 448, 229
+    // Fix / action buttons
+    PUSHBUTTON      "Fix Selected",  IDC_RS_BTN_FIX_SEL,    5, 305,  69, 17
+    PUSHBUTTON      "Fix All",       IDC_RS_BTN_FIX_ALL,   78, 305,  57, 17
+    PUSHBUTTON      "Backup && Fix", IDC_RS_BTN_BACKUP_FIX,139, 305,  86, 17
+    PUSHBUTTON      "Ignore",        IDC_RS_BTN_IGNORE,    230, 305,  74, 17
+    PUSHBUTTON      "Close",         IDC_RS_BTN_CLOSE,     395, 305,  57, 17
+    LTEXT           "", IDC_RS_STATIC_STATUS, 5, 323, 448,  9
+END
+
+// -------------------------------------------------------------------------
+// Version info
+// -------------------------------------------------------------------------
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName",      "Videalert"
+            VALUE "FileDescription",  "DiskForge"
+            VALUE "FileVersion",      "1.0.0.0"
+            VALUE "InternalName",     "DiskForge"
+            VALUE "OriginalFilename", "DiskForge.exe"
+            VALUE "ProductName",      "DiskForge"
+            VALUE "ProductVersion",   "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
