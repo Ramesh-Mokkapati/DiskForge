@@ -48,8 +48,9 @@ jobs:
           retention-days: 30
 
   # -------------------------------------------------------------------------
-  # Attach the Release exe to a GitHub Release when a v*.*.* tag is pushed.
-  # Runs only after both build matrix legs succeed.
+  # Attach the Release exe, zipped as DiskForge-<tag>-x64.zip, to a GitHub
+  # Release when a v*.*.* tag is pushed. Runs only after both build matrix
+  # legs succeed.
   # -------------------------------------------------------------------------
   release:
     name: Publish GitHub Release
@@ -65,8 +66,14 @@ jobs:
         with:
           name: Release-x64
 
+      - name: Zip package
+        run: zip "DiskForge-${{ github.ref_name }}-x64.zip" DiskForge.exe
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: DiskForge.exe
+          files: DiskForge-${{ github.ref_name }}-x64.zip
           generate_release_notes: true   # auto-generates notes from merged PRs / commits
+          # v1.2.0-rc1 etc. become pre-releases, so they never count as the "latest" release
+          # that downstream packaging (the ComponentSuite installer) picks up.
+          prerelease: ${{ contains(github.ref_name, '-') }}
