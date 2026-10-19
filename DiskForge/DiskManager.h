@@ -32,6 +32,14 @@ public:
     // Buffer must be at least m_bytesPerSector bytes, sector-aligned
     bool ReadSector(ULONGLONG sectorIndex, std::vector<BYTE>& buffer);
 
+    // Reads 'count' consecutive sectors starting at sectorIndex in one
+    // request (used by the filesystem parsers, which read whole clusters and
+    // MFT chunks - far faster than one ReadSector call per sector). The
+    // range must lie inside the disk.
+    bool ReadSectors(ULONGLONG sectorIndex, DWORD count, std::vector<BYTE>& buffer);
+
+    const CString& GetDevicePath() const { return m_devicePath; }
+
     // Getters for currently-open drive properties
     DWORD       GetBytesPerSector() const { return m_bytesPerSector; }
     ULONGLONG   GetTotalSectors()   const { return m_totalSectors; }
@@ -40,6 +48,7 @@ public:
 
 private:
     HANDLE      m_hDrive;
+    CString     m_devicePath;
     DWORD       m_bytesPerSector;
     ULONGLONG   m_totalSectors;
     CString     m_lastError;

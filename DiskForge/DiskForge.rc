@@ -5,65 +5,166 @@
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
-// MFC SDI document string (IDR_MAINFRAME)
-// Format: title\nshortTitle\nfilterName\nfilterExt\nRegFileTypeId\nRegFileTypeName\nFilterName
-STRINGTABLE
+// -------------------------------------------------------------------------
+// Icons and bitmaps (pane/caption assets from the NewTest framework)
+// -------------------------------------------------------------------------
+IDR_MAINFRAME           ICON    "res\\DiskForge.ico"
+IDI_OUTPUT_WND          ICON    "res\\output_wnd.ico"
+IDI_OUTPUT_WND_HC       ICON    "res\\output_wnd_hc.ico"
+IDI_PROPERTIES_WND      ICON    "res\\properties_wnd.ico"
+IDI_PROPERTIES_WND_HC   ICON    "res\\properties_wnd_hc.ico"
+
+IDB_MAIN                BITMAP  "res\\main.bmp"
+IDB_INFO                BITMAP  "res\\info.bmp"
+IDR_PROPERTIES          BITMAP  "res\\properties.bmp"
+IDB_PROPERTIES_HC       BITMAP  "res\\properties_hc.bmp"
+IDB_PAGES               BITMAP  "res\\pages.bmp"
+IDB_PAGES_HC            BITMAP  "res\\pages_hc.bmp"
+IDB_PAGES_SMALL         BITMAP  "res\\pages_small.bmp"
+IDB_PAGES_SMALL_HC      BITMAP  "res\\pages_small_hc.bmp"
+
+IDR_PROPERTIES TOOLBAR 16, 15
 BEGIN
-    IDR_MAINFRAME "DiskForge\nDiskForge\nDiskForge\n\n\nDiskForge.Document\nDiskForge Document"
+    BUTTON      ID_EXPAND_ALL
+    BUTTON      ID_SORTPROPERTIES
 END
 
-// Minimal menu — required by CFrameWnd::LoadFrame (returns FALSE without one)
+// -------------------------------------------------------------------------
+// Menus. IDR_MAINFRAME is required by CFrameWnd::LoadFrame; the ribbon
+// replaces it on screen.
+// -------------------------------------------------------------------------
 IDR_MAINFRAME MENU
 BEGIN
     POPUP "&File"
     BEGIN
-        MENUITEM "E&xit",  ID_APP_EXIT
+        MENUITEM "&Refresh Disks",              ID_DISK_REFRESH
+        MENUITEM "&Open Disk Image...",         ID_DISK_OPEN_IMAGE
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       ID_APP_EXIT
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About DiskForge...", ID_APP_ABOUT
+        MENUITEM "&About DiskForge...",         ID_APP_ABOUT
+    END
+END
+
+IDR_THEME_MENU MENU
+BEGIN
+    MENUITEM "Office 2007 (&Blue Style)",       ID_VIEW_APPLOOK_OFF_2007_BLUE
+    MENUITEM "Office 2007 (B&lack Style)",      ID_VIEW_APPLOOK_OFF_2007_BLACK
+    MENUITEM "Office 2007 (&Silver Style)",     ID_VIEW_APPLOOK_OFF_2007_SILVER
+    MENUITEM "Office 2007 (&Aqua Style)",       ID_VIEW_APPLOOK_OFF_2007_AQUA
+    MENUITEM "Win&dows 7",                      ID_VIEW_APPLOOK_WINDOWS_7
+    MENUITEM SEPARATOR
+    MENUITEM "Visual Studio 200&5",             ID_VIEW_APPLOOK_VS_2005
+    MENUITEM "Visual Studio 200&8",             ID_VIEW_APPLOOK_VS_2008
+    MENUITEM "Office 200&3",                    ID_VIEW_APPLOOK_OFF_2003
+    MENUITEM "Office &XP",                      ID_VIEW_APPLOOK_OFF_XP
+    MENUITEM "&Windows XP",                     ID_VIEW_APPLOOK_WIN_XP
+    MENUITEM "Windows &2000",                   ID_VIEW_APPLOOK_WIN_2000
+END
+
+IDR_POPUP_BROWSER MENU
+BEGIN
+    POPUP "Browser"
+    BEGIN
+        MENUITEM "&Open",                       ID_BROWSE_OPEN
+        MENUITEM "&Recover...",                 ID_BROWSE_RECOVER
+        MENUITEM SEPARATOR
+        MENUITEM "Show &Entry / Record in Sector View", ID_BROWSE_SHOW_META
+        MENUITEM "Show &Data in Sector View",   ID_BROWSE_SHOW_DATA
+    END
+END
+
+IDR_OUTPUT_POPUP MENU
+BEGIN
+    POPUP "Popup"
+    BEGIN
+        MENUITEM "&Copy",                       ID_EDIT_COPY
+        MENUITEM "C&lear",                      ID_EDIT_CLEAR
+        MENUITEM SEPARATOR
+        MENUITEM "&Hide",                       ID_VIEW_OUTPUTWND
     END
 END
 
 // -------------------------------------------------------------------------
-// IDD_MAIN  (CDiskForgeDlg : CFormView)
-// Style MUST be DS_SETFONT|WS_CHILD — CFormView requires this; CMainFrame
-// provides the caption, borders and menu bar.
+// Strings
 // -------------------------------------------------------------------------
-// Right-pane content: hex viewer + drive/sector controls.
-// Sidebar removed — navigation is now in the left splitter pane (CNavTreeView).
-IDD_MAIN DIALOGEX 0, 0, 460, 560
-STYLE DS_SETFONT | WS_CHILD
+STRINGTABLE
+BEGIN
+    IDR_MAINFRAME           "DiskForge\n\nDiskForge\n\n\nDiskForge.Document\nDiskForge Document"
+    AFX_IDS_APP_TITLE       "DiskForge"
+    AFX_IDS_IDLEMESSAGE     "Ready"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_OUTPUT_WND          "Output"
+    IDS_PROPERTIES_WND      "Properties"
+    IDS_HEX_WND             "Sector View"
+    IDS_SHORTCUTS           "Tools"
+    IDS_OUTLOOKBAR          "Tools Bar"
+    IDS_PAGE_TOOLS          "Disk Tools"
+    IDS_PAGE_RECOVERY       "Recovery"
+    IDS_PAGE_BOOT           "Boot && Firmware"
+    IDS_CAPTION_TEXT        "The System Browser and file recovery only read the source disk. Tools marked (writes) can change disks and ask for confirmation first."
+    IDS_CAPTION_BUTTON      "Refresh Disks"
+    IDS_CAPTION_BUTTON_TIP  "Re-read the list of physical disks"
+    IDS_CAPTION_IMAGE_TIP   "Read-only browsing"
+    IDS_CAPTION_IMAGE_TEXT  "DiskForge reads raw sectors and needs Administrator rights."
+    IDS_LOG_TAB             "Log"
+    IDS_STATUS_PANE1        "Ready"
+    IDS_STATUS_PANE2        "No disk"
+END
+
+STRINGTABLE
+BEGIN
+    ID_DISK_REFRESH         "Re-read the list of physical disks\nRefresh Disks"
+    ID_DISK_OPEN_IMAGE      "Browse a raw disk image file (for example one saved by Disk Copy), read-only\nOpen Disk Image"
+    ID_BROWSE_SHOW_DELETED  "Show deleted files and folders in the System Browser\nShow Deleted"
+    ID_BROWSE_DELETED_ONLY  "List only deleted entries\nDeleted Only"
+    ID_BROWSE_RECOVER       "Copy the selected files or folders (live or deleted) to a folder on another disk\nRecover"
+    ID_BROWSE_SHOW_META     "Show the selected item's directory entry or MFT record in the Sector View\nShow Record"
+    ID_BROWSE_SHOW_DATA     "Show the selected file's first data sector in the Sector View\nShow Data"
+    ID_BROWSE_OPEN          "Open the selected folder or partition\nOpen"
+    ID_BROWSE_UP            "Go to the parent item\nUp"
+    ID_SECTOR_FIRST         "First sector of the disk\nFirst"
+    ID_SECTOR_PREV          "Previous sector\nPrevious"
+    ID_SECTOR_NEXT          "Next sector\nNext"
+    ID_SECTOR_LAST          "Last sector of the disk\nLast"
+    ID_SECTOR_EDIT          "Sector number (LBA) to show - decimal or 0x hex; press Enter\nLBA"
+    ID_SECTOR_GOTO          "Show the sector typed in the LBA box\nGo To"
+    ID_TOOL_PARTITIONS      "Show the partition table of a disk\nPartition Table"
+    ID_TOOL_DISKCOPY        "Clone a disk or partition to another disk or an image file (writes)\nDisk Copy"
+    ID_TOOL_BADSECTOR       "Surface-scan a disk for unreadable sectors\nBad Sector Scan"
+    ID_TOOL_SMART           "Read the S.M.A.R.T. health data reported by a drive\nDisk Health"
+    ID_TOOL_MBRGPT          "Convert a disk from MBR to GPT in place (writes)\nMBR to GPT"
+    ID_TOOL_PARTEDIT        "Edit, delete or extend partition table entries (writes)\nPartition Editor"
+    ID_TOOL_WIPE            "Overwrite a whole disk or partition (writes)\nWipe Disk"
+    ID_TOOL_EFIBOOT         "Manage UEFI boot entries in NVRAM (writes)\nUEFI Boot"
+    ID_TOOL_LOSTPART        "Search unallocated space for lost partitions\nLost Partitions"
+    ID_TOOL_FILERECOVERY    "Classic FAT32 file recovery dialog\nFAT32 Recovery"
+    ID_VIEW_OUTPUTWND       "Show or hide the Output pane\nOutput"
+    ID_VIEW_PROPERTIESWND   "Show or hide the Properties pane\nProperties"
+    ID_VIEW_HEXWND          "Show or hide the Sector View pane\nSector View"
+    ID_VIEW_NAVIGATION      "Show or hide the Tools bar\nTools Bar"
+    ID_VIEW_CAPTION_BAR     "Show or hide the caption bar\nCaption Bar"
+    ID_EXPAND_ALL           "Expand all groups\nExpand All"
+    ID_SORTPROPERTIES       "Sort alphabetically\nSort"
+END
+
+// -------------------------------------------------------------------------
+// IDD_ABOUTBOX
+// -------------------------------------------------------------------------
+IDD_ABOUTBOX DIALOGEX 0, 0, 230, 82
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About DiskForge"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    // --- Drive-selection row (y=8)
-    COMBOBOX        IDC_COMBO_DRIVES,    8,  8, 218, 200, CBS_DROPDOWNLIST|WS_VSCROLL|WS_TABSTOP
-    PUSHBUTTON      "Refresh",           IDC_BTN_REFRESH,    234,  8,  90, 26
-    PUSHBUTTON      "Open Drive",        IDC_BTN_OPEN,       334,  8, 100, 26
-
-    // --- Drive info (y=44, h=48)
-    LTEXT           "", IDC_STATIC_DRIVEINFO, 8, 44, 444, 48
-
-    // --- Sector navigation row (y=104)
-    LTEXT           "Sector #",          IDC_STATIC,          8, 108,  52, 14
-    EDITTEXT        IDC_EDIT_SECTOR,                         64, 104,  80, 24, ES_NUMBER|ES_AUTOHSCROLL
-    PUSHBUTTON      "Go to Sector",      IDC_BTN_GOTO,       148, 104,  80, 24
-    PUSHBUTTON      "|<",                IDC_BTN_FIRST,      232, 104,  48, 24
-    PUSHBUTTON      "<",                 IDC_BTN_PREV,       284, 104,  48, 24
-    PUSHBUTTON      ">",                 IDC_BTN_NEXT,       336, 104,  48, 24
-    PUSHBUTTON      ">|",               IDC_BTN_LAST,       388, 104,  48, 24
-
-    // Sector-info label; LayoutControls repositions it to R-200, y=104
-    LTEXT           "", IDC_STATIC_SECTOR, 152, 130, 284, 14
-
-    // --- HexView placeholder; OnInitialUpdate destroys and replaces with CHexView
-    LTEXT           "", IDC_HEXVIEW, 8, 140, 444, 350
-
-    // --- Progress bar
-    CONTROL         "", IDC_PROGRESS, "msctls_progress32", PBS_SMOOTH|WS_CHILD|WS_VISIBLE, 8, 498, 444, 12
-
-    // --- Status bar
-    LTEXT           "", IDC_STATIC_STATUS, 8, 518, 444, 20
+    ICON            IDR_MAINFRAME, IDC_STATIC, 14, 14, 21, 20
+    LTEXT           "DiskForge - raw disk browser, recovery and repair tools", IDC_STATIC, 42, 14, 180, 8, SS_NOPREFIX
+    LTEXT           "System Browser: partitions, boot records, FAT / MFT and deleted-file recovery.", IDC_STATIC, 42, 28, 180, 18
+    DEFPUSHBUTTON   "OK", IDOK, 173, 61, 50, 14, WS_GROUP
 END
 
 // -------------------------------------------------------------------------
@@ -364,27 +465,6 @@ BEGIN
 END
 
 // -------------------------------------------------------------------------
-// IDD_FILEUNLOCKER  (CFileUnlockerDialog)
-// -------------------------------------------------------------------------
-IDD_FILEUNLOCKER DIALOGEX 0, 0, 354, 258
-STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
-      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
-CAPTION "File Unlocker"
-FONT 8, "MS Shell Dlg", 400, 0, 0x1
-BEGIN
-    EDITTEXT        IDC_FU_EDIT_FILE_PATH,    7,   7, 289, 14, ES_AUTOHSCROLL
-    PUSHBUTTON      "Browse...", IDC_FU_BTN_BROWSE, 302, 7, 46, 14
-    CONTROL         "", IDC_FU_LIST_LOCKERS, "SysListView32",
-                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
-                    7, 26, 341, 174
-    LTEXT           "", IDC_FU_STATIC_STATUS, 7, 203, 341, 14
-    PUSHBUTTON      "Refresh",       IDC_FU_BTN_REFRESH,        7, 222,  63, 16
-    PUSHBUTTON      "Kill Selected", IDC_FU_BTN_KILL_SELECTED,  75, 222,  74, 16
-    PUSHBUTTON      "Kill All",      IDC_FU_BTN_KILL_ALL,      155, 222,  69, 16
-    PUSHBUTTON      "Close",         IDC_FU_BTN_CLOSE,         296, 238,  51, 16
-END
-
-// -------------------------------------------------------------------------
 // IDD_EXTENDPARTITION  (CExtendPartitionDialog)  — fixed-size, no resize
 // -------------------------------------------------------------------------
 IDD_EXTENDPARTITION DIALOGEX 0, 0, 286, 172
@@ -403,92 +483,6 @@ BEGIN
     LTEXT           "", IDC_EX_STATIC_STATUS,         7,  73, 272, 18
     PUSHBUTTON      "Extend", IDC_EX_BTN_EXTEND, 165, 150,  53, 16
     PUSHBUTTON      "Cancel", IDC_EX_BTN_CANCEL, 223, 150,  56, 16
-END
-
-// -------------------------------------------------------------------------
-// IDD_STARTUPMANAGER  (CStartupManagerDialog)
-// -------------------------------------------------------------------------
-IDD_STARTUPMANAGER DIALOGEX 0, 0, 400, 258
-STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
-      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
-CAPTION "Startup Manager"
-FONT 8, "MS Shell Dlg", 400, 0, 0x1
-BEGIN
-    CONTROL         "", IDC_SM_LIST, "SysListView32",
-                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
-                    5, 5, 391, 217
-    PUSHBUTTON      "Add Entry...",  IDC_SM_BTN_ADD,       5, 230,  57, 17
-    PUSHBUTTON      "Delete",        IDC_SM_BTN_DELETE,   66, 230,  57, 17
-    PUSHBUTTON      "Enable/Disable",IDC_SM_BTN_TOGGLE,  128, 230,  74, 17
-    PUSHBUTTON      "Refresh",       IDC_SM_BTN_REFRESH, 207, 230,  57, 17
-    PUSHBUTTON      "Close",         IDC_SM_BTN_CLOSE,   338, 230,  57, 17
-    LTEXT           "", IDC_SM_STATIC_STATUS, 5, 247, 391, 10
-END
-
-// -------------------------------------------------------------------------
-// IDD_ADDSTARTUPENTRY  (CAddStartupEntryDialog)  — fixed-size, no resize
-// -------------------------------------------------------------------------
-IDD_ADDSTARTUPENTRY DIALOGEX 0, 0, 240, 121
-STYLE DS_SETFONT | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
-CAPTION "Add Startup Entry"
-FONT 8, "MS Shell Dlg", 400, 0, 0x1
-BEGIN
-    LTEXT           "Name:",    IDC_AS_STATIC_NAME,  9,  14,  41, 12
-    EDITTEXT        IDC_AS_EDIT_NAME,                53,  14, 178, 12, ES_AUTOHSCROLL
-    LTEXT           "Command:", IDC_AS_STATIC_CMD,    9,  34,  41, 12
-    EDITTEXT        IDC_AS_EDIT_CMD,                 53,  34, 139, 12, ES_AUTOHSCROLL
-    PUSHBUTTON      "Browse...", IDC_AS_BTN_BROWSE, 195,  34,  35, 12
-    LTEXT           "Hive:", IDC_STATIC,              9,  59,  40,  9
-    AUTORADIOBUTTON "HKCU (current user)", IDC_AS_RADIO_HKCU,  53, 57,  94, 14, WS_GROUP
-    AUTORADIOBUTTON "HKLM (all users)",    IDC_AS_RADIO_HKLM, 152, 57,  79, 14
-    AUTOCHECKBOX    "Run once (delete after first run)", IDC_AS_CHK_RUNONCE,  9, 76, 222, 12
-    PUSHBUTTON      "Add",    IDC_AS_BTN_ADD,    159, 101, 34, 12
-    PUSHBUTTON      "Cancel", IDC_AS_BTN_CANCEL, 198, 101, 33, 12
-END
-
-// -------------------------------------------------------------------------
-// IDD_REGISTRYSCANNER  (CRegistryScannerDialog)
-// -------------------------------------------------------------------------
-IDD_REGISTRYSCANNER DIALOGEX 0, 0, 457, 332
-STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
-      WS_SIZEBOX | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
-CAPTION "Registry Scanner"
-FONT 8, "MS Shell Dlg", 400, 0, 0x1
-BEGIN
-    // Row 1 (alphabetical A-F)
-    AUTOCHECKBOX "App Paths",          IDC_RS_CHK_APPPATH,           5,  6, 87, 12
-    AUTOCHECKBOX "Browser Helper",     IDC_RS_CHK_BROWSER_HELPER,   94,  6, 87, 12
-    AUTOCHECKBOX "File Extensions",    IDC_RS_CHK_FILE_EXT,         183,  6, 87, 12
-    AUTOCHECKBOX "Firewall Rules",     IDC_RS_CHK_FIREWALL,         272,  6, 87, 12
-    AUTOCHECKBOX "Fonts",              IDC_RS_CHK_FONTS,            361,  6, 91, 12
-    // Row 2 (H-S)
-    AUTOCHECKBOX "Help Files",         IDC_RS_CHK_HELP_FILES,         5, 20, 87, 12
-    AUTOCHECKBOX "Installers",         IDC_RS_CHK_INSTALLERS,        94, 20, 87, 12
-    AUTOCHECKBOX "Interface (COM)",    IDC_RS_CHK_INTERFACE,         183, 20, 87, 12
-    AUTOCHECKBOX "MUI Cache",          IDC_RS_CHK_MUI_CACHE,         272, 20, 87, 12
-    AUTOCHECKBOX "Shared DLLs",        IDC_RS_CHK_SHAREDDLL,         361, 20, 91, 12
-    // Row 3 (O-W)
-    AUTOCHECKBOX "Obsolete Software",  IDC_RS_CHK_UNINSTALL,           5, 34, 87, 12
-    AUTOCHECKBOX "Open With Apps",     IDC_RS_CHK_OPEN_WITH,          94, 34, 87, 12
-    AUTOCHECKBOX "Run At Startup",     IDC_RS_CHK_STARTUP,           183, 34, 87, 12
-    AUTOCHECKBOX "Sound Events",       IDC_RS_CHK_SOUND_EVENTS,      272, 34, 87, 12
-    AUTOCHECKBOX "Windows Services",   IDC_RS_CHK_SERVICES,          361, 34, 91, 12
-    // Scan button and progress bar
-    PUSHBUTTON      "Scan", IDC_RS_BTN_SCAN,  5, 51,  57, 15
-    LTEXT           "", IDC_RS_STATIC_PROGRESS, 66, 51,  77, 15
-    CONTROL         "", IDC_RS_PROGRESS, "msctls_progress32", PBS_SMOOTH|WS_CHILD|WS_VISIBLE,
-                    147, 54, 305, 10
-    // Results list
-    CONTROL         "", IDC_RS_LIST, "SysListView32",
-                    LVS_REPORT|LVS_SHOWSELALWAYS|WS_BORDER|WS_CHILD|WS_VISIBLE|WS_TABSTOP,
-                    5, 71, 448, 229
-    // Fix / action buttons
-    PUSHBUTTON      "Fix Selected",  IDC_RS_BTN_FIX_SEL,    5, 305,  69, 17
-    PUSHBUTTON      "Fix All",       IDC_RS_BTN_FIX_ALL,   78, 305,  57, 17
-    PUSHBUTTON      "Backup && Fix", IDC_RS_BTN_BACKUP_FIX,139, 305,  86, 17
-    PUSHBUTTON      "Ignore",        IDC_RS_BTN_IGNORE,    230, 305,  74, 17
-    PUSHBUTTON      "Close",         IDC_RS_BTN_CLOSE,     395, 305,  57, 17
-    LTEXT           "", IDC_RS_STATIC_STATUS, 5, 323, 448,  9
 END
 
 // -------------------------------------------------------------------------

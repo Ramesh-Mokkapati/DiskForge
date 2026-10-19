@@ -1,9 +1,100 @@
 // resource.h - Resource identifiers
 #pragma once
 
+// ---- Application frame (NewTest-style ribbon / docking framework) ----
+// IDR_MAINFRAME (128) is the frame's icon, title string and menu.
+#define IDR_THEME_MENU            200
+#define IDR_POPUP_BROWSER         201
+#define IDR_OUTPUT_POPUP          202
+#define IDR_PROPERTIES            203   // Properties pane toolbar (+ bitmap)
+#define IDB_PROPERTIES_HC         204
+#define IDB_PAGES                 205
+#define IDB_PAGES_HC              206
+#define IDB_PAGES_SMALL           207
+#define IDB_PAGES_SMALL_HC        208
+#define IDB_INFO                  209
+#define IDB_MAIN                  210
+#define IDI_OUTPUT_WND            211
+#define IDI_OUTPUT_WND_HC         212
+#define IDI_PROPERTIES_WND        213
+#define IDI_PROPERTIES_WND_HC     214
+
+#define IDS_OUTPUT_WND            300
+#define IDS_PROPERTIES_WND        301
+#define IDS_HEX_WND               302
+#define IDS_SHORTCUTS             303
+#define IDS_OUTLOOKBAR            304
+#define IDS_PAGE_TOOLS            305
+#define IDS_PAGE_RECOVERY         306
+#define IDS_PAGE_BOOT             307
+#define IDS_CAPTION_TEXT          308
+#define IDS_CAPTION_BUTTON        309
+#define IDS_CAPTION_BUTTON_TIP    310
+#define IDS_CAPTION_IMAGE_TIP     311
+#define IDS_CAPTION_IMAGE_TEXT    312
+#define IDS_LOG_TAB               313
+#define IDS_STATUS_PANE1          314
+#define IDS_STATUS_PANE2          315
+
+// ---- Panes and status bar ----
+#define ID_VIEW_OUTPUTWND         32800
+#define ID_VIEW_PROPERTIESWND     32801
+#define ID_VIEW_HEXWND            32802
+#define ID_VIEW_NAVIGATION        32803
+#define ID_VIEW_CAPTION_BAR       32804
+#define ID_STATUSBAR_PANE1        32805
+#define ID_STATUSBAR_PANE2        32806
+#define ID_EXPAND_ALL             32807
+#define ID_SORTPROPERTIES         32808
+#define ID_TOOLS_OPTIONS          32809
+
+// Application look (keep contiguous - handled as a range)
+#define ID_VIEW_APPLOOK_WIN_2000        32820
+#define ID_VIEW_APPLOOK_OFF_XP          32821
+#define ID_VIEW_APPLOOK_WIN_XP          32822
+#define ID_VIEW_APPLOOK_OFF_2003        32823
+#define ID_VIEW_APPLOOK_VS_2005         32824
+#define ID_VIEW_APPLOOK_VS_2008         32825
+#define ID_VIEW_APPLOOK_OFF_2007_BLUE   32826
+#define ID_VIEW_APPLOOK_OFF_2007_BLACK  32827
+#define ID_VIEW_APPLOOK_OFF_2007_SILVER 32828
+#define ID_VIEW_APPLOOK_OFF_2007_AQUA   32829
+#define ID_VIEW_APPLOOK_WINDOWS_7       32830
+
+// ---- System Browser ----
+#define ID_DISK_REFRESH           32840
+#define ID_DISK_OPEN_IMAGE        32848
+#define ID_BROWSE_SHOW_DELETED    32841
+#define ID_BROWSE_DELETED_ONLY    32842
+#define ID_BROWSE_RECOVER         32843
+#define ID_BROWSE_SHOW_META       32844   // hex view: directory entry / MFT record
+#define ID_BROWSE_SHOW_DATA       32845   // hex view: first data sector
+#define ID_BROWSE_OPEN            32846   // open folder / partition in the tree
+#define ID_BROWSE_UP              32847
+
+// ---- Sector (hex) navigation ----
+#define ID_SECTOR_FIRST           32860
+#define ID_SECTOR_PREV            32861
+#define ID_SECTOR_NEXT            32862
+#define ID_SECTOR_LAST            32863
+#define ID_SECTOR_EDIT            32864   // ribbon edit box; Enter = go
+#define ID_SECTOR_GOTO            32865
+
+// ---- Disk tools (each opens its existing dialog) ----
+#define ID_TOOL_PARTITIONS        32880
+#define ID_TOOL_DISKCOPY          32881
+#define ID_TOOL_BADSECTOR         32882
+#define ID_TOOL_SMART             32883
+#define ID_TOOL_MBRGPT            32884
+#define ID_TOOL_PARTEDIT          32885
+#define ID_TOOL_WIPE              32886
+#define ID_TOOL_EFIBOOT           32887
+#define ID_TOOL_LOSTPART          32888
+#define ID_TOOL_FILERECOVERY      32889
+
 // Dialog template IDs
 #define IDR_MAINFRAME       128
-#define IDD_MAIN            100
+#define IDD_ABOUTBOX        100
 #define IDD_PARTITIONS      101
 #define IDD_CONFIRM_TEXT    102
 #define IDD_DISKCOPY        103
@@ -15,42 +106,7 @@
 #define IDD_EFIBOOT         109
 #define IDD_LOSTPARTITION   110
 #define IDD_FILERECOVERY    111
-#define IDD_FILEUNLOCKER       112
 #define IDD_EXTENDPARTITION    113
-#define IDD_STARTUPMANAGER     114
-#define IDD_ADDSTARTUPENTRY    115
-#define IDD_REGISTRYSCANNER    116
-
-// ---- IDD_MAIN (CDiskForgeDlg / CFormView) control IDs ----
-#define IDC_COMBO_DRIVES         1001
-#define IDC_BTN_OPEN             1002
-#define IDC_STATIC_DRIVEINFO     1003
-#define IDC_EDIT_SECTOR          1004
-#define IDC_BTN_GOTO             1005
-#define IDC_BTN_PREV             1006
-#define IDC_BTN_NEXT             1007
-#define IDC_BTN_FIRST            1008
-#define IDC_BTN_LAST             1009
-#define IDC_HEXVIEW              1010
-#define IDC_STATIC_SECTOR        1011
-#define IDC_BTN_REFRESH          1012
-#define IDC_PROGRESS             1013
-#define IDC_STATIC_STATUS        1014
-#define IDC_BTN_PARTITIONS       1015
-#define IDC_BTN_DISKCOPY         1016
-#define IDC_BTN_BADSECTORSCAN    1017
-#define IDC_BTN_SMARTHEALTH      1018
-#define IDC_BTN_MBRGPT           1019
-#define IDC_BTN_PARTEDIT         1020
-#define IDC_BTN_WIPEDISK         1021
-#define IDC_BTN_EFIBOOT          1022
-#define IDC_BTN_LOSTPART         1023
-#define IDC_BTN_FILERECOVERY     1024
-#define IDC_STATIC_SIDEBAR_TITLE 1025
-#define IDC_STATIC_SIDEBAR_BG    1026
-#define IDC_BTN_FILEUNLOCKER     1027
-#define IDC_BTN_STARTUP          1028
-#define IDC_BTN_REGSCAN          1029
 
 // ---- IDD_PARTITIONS (CPartitionDialog) ----
 #define IDC_PART_LIST            2001
@@ -212,62 +268,3 @@
 #define IDC_FR_BTN_RECOVER       12008
 #define IDC_FR_STATIC_STATUS     12009
 #define IDC_FR_BTN_CLOSE         12010
-
-// ---- IDD_FILEUNLOCKER (CFileUnlockerDialog) ----
-#define IDC_FU_EDIT_FILE_PATH    13001
-#define IDC_FU_BTN_BROWSE        13002
-#define IDC_FU_LIST_LOCKERS      13003
-#define IDC_FU_BTN_REFRESH       13004
-#define IDC_FU_BTN_KILL_SELECTED 13005
-#define IDC_FU_BTN_KILL_ALL      13006
-#define IDC_FU_STATIC_STATUS     13007
-#define IDC_FU_BTN_CLOSE         13008
-
-// ---- IDD_STARTUPMANAGER (CStartupManagerDialog) ----
-#define IDC_SM_LIST           14001
-#define IDC_SM_BTN_ADD        14002
-#define IDC_SM_BTN_DELETE     14003
-#define IDC_SM_BTN_TOGGLE     14004
-#define IDC_SM_BTN_REFRESH    14005
-#define IDC_SM_BTN_CLOSE      14006
-#define IDC_SM_STATIC_STATUS  14007
-
-// ---- IDD_ADDSTARTUPENTRY (CAddStartupEntryDialog) ----
-#define IDC_AS_STATIC_NAME    15001
-#define IDC_AS_EDIT_NAME      15002
-#define IDC_AS_STATIC_CMD     15003
-#define IDC_AS_EDIT_CMD       15004
-#define IDC_AS_BTN_BROWSE     15005
-#define IDC_AS_RADIO_HKCU     15006
-#define IDC_AS_RADIO_HKLM     15007
-#define IDC_AS_CHK_RUNONCE    15008
-#define IDC_AS_BTN_ADD        15009
-#define IDC_AS_BTN_CANCEL     15010
-
-// ---- IDD_REGISTRYSCANNER (CRegistryScannerDialog) ----
-#define IDC_RS_CHK_STARTUP      16001
-#define IDC_RS_CHK_UNINSTALL    16002
-#define IDC_RS_CHK_APPPATH      16003
-#define IDC_RS_CHK_SHAREDDLL    16004
-#define IDC_RS_BTN_SCAN         16005
-#define IDC_RS_PROGRESS         16006
-#define IDC_RS_LIST             16007
-#define IDC_RS_BTN_FIX_SEL      16008
-#define IDC_RS_BTN_FIX_ALL      16009
-#define IDC_RS_BTN_BACKUP_FIX   16010
-#define IDC_RS_BTN_IGNORE       16011
-#define IDC_RS_BTN_CLOSE        16012
-#define IDC_RS_STATIC_STATUS    16013
-#define IDC_RS_STATIC_SCOPE     16014
-#define IDC_RS_STATIC_PROGRESS  16015
-#define IDC_RS_CHK_BROWSER_HELPER 16016
-#define IDC_RS_CHK_FILE_EXT       16017
-#define IDC_RS_CHK_FIREWALL       16018
-#define IDC_RS_CHK_FONTS          16019
-#define IDC_RS_CHK_HELP_FILES     16020
-#define IDC_RS_CHK_INSTALLERS     16021
-#define IDC_RS_CHK_INTERFACE      16022
-#define IDC_RS_CHK_MUI_CACHE      16023
-#define IDC_RS_CHK_OPEN_WITH      16024
-#define IDC_RS_CHK_SOUND_EVENTS   16025
-#define IDC_RS_CHK_SERVICES       16026

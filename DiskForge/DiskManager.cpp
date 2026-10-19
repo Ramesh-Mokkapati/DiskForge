@@ -154,6 +154,27 @@ bool CDiskManager::OpenDrive(const CString& devicePath)
 {
     CloseDrive();
 
+    // A path that isn't a \\.\ device is a raw disk image file (e.g. one
+    // saved by Disk Copy): read it as a disk with 512-byte sectors.
+    if (devicePath.Left(4) != _T("\\\\.\\"))
+    {
+        m_hDrive = CreateFile(devicePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                              OPEN_EXISTING, FILE_FLAG_RANDOM_ACCESS, nullptr);
+        LARGE_INTEGER size = {};
+        if (m_hDrive == INVALID_HANDLE_VALUE || !GetFileSizeEx(m_hDrive, &size))
+        {
+            CString msg;
+            msg.Format(_T("Failed to open image file '%s'. Error: %u"), devicePath.GetString(), ::GetLastError());
+            SetError(msg);
+            CloseDrive();
+            return false;
+        }
+        m_bytesPerSector = 512;
+        m_totalSectors = (ULONGLONG)size.QuadPart / 512;
+        m_devicePath = devicePath;
+        return true;
+    }
+
     m_hDrive = CreateFile(
         devicePath,
         GENERIC_READ,
@@ -191,6 +212,7 @@ bool CDiskManager::OpenDrive(const CString& devicePath)
     m_bytesPerSector = (geo.Geometry.BytesPerSector > 0) ? geo.Geometry.BytesPerSector : 512;
     ULONGLONG totalBytes = static_cast<ULONGLONG>(geo.DiskSize.QuadPart);
     m_totalSectors = (m_bytesPerSector > 0) ? (totalBytes / m_bytesPerSector) : 0;
+    m_devicePath = devicePath;
 
     return true;
 }
@@ -204,6 +226,7 @@ void CDiskManager::CloseDrive()
     }
     m_bytesPerSector = 512;
     m_totalSectors   = 0;
+    m_devicePath.Empty();
 }
 
 bool CDiskManager::ReadSector(ULONGLONG sectorIndex, std::vector<BYTE>& buffer)
@@ -272,6 +295,58 @@ bool CDiskManager::ReadSector(ULONGLONG sectorIndex, std::vector<BYTE>& buffer)
         static_cast<BYTE*>(rawBuf),
         static_cast<BYTE*>(rawBuf) + m_bytesPerSector);
 
+    VirtualFree(rawBuf, 0, MEM_RELEASE);
+    return true;
+}
+
+bool CDiskManager::ReadSectors(ULONGLONG sectorIndex, DWORD count, std::vector<BYTE>& buffer)
+{
+    if (m_hDrive == INVALID_HANDLE_VALUE)
+    {
+        SetError(_T("No drive is open."));
+        return false;
+    }
+    if (count == 0 || sectorIndex >= m_totalSectors || count > m_totalSectors - sectorIndex)
+    {
+        CString msg;
+        msg.Format(_T("Sectors %llu..%llu are beyond the last sector (%llu)."),
+                   sectorIndex, sectorIndex + count - 1, m_totalSectors - 1);
+        SetError(msg);
+        return false;
+    }
+
+    const ULONGLONG bytes64 = (ULONGLONG)count * m_bytesPerSector;
+    if (bytes64 > 64ULL * 1024 * 1024)
+    {
+        SetError(_T("Read request too large (max 64 MB)."));
+        return false;
+    }
+    const DWORD bytes = (DWORD)bytes64;
+
+    // VirtualAlloc memory is page-aligned, which satisfies FILE_FLAG_NO_BUFFERING.
+    LPVOID rawBuf = VirtualAlloc(nullptr, bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    if (!rawBuf)
+    {
+        SetError(_T("VirtualAlloc failed for sector buffer."));
+        return false;
+    }
+
+    LARGE_INTEGER offset;
+    offset.QuadPart = static_cast<LONGLONG>(sectorIndex) * m_bytesPerSector;
+    DWORD bytesRead = 0;
+    BOOL ok = SetFilePointerEx(m_hDrive, offset, nullptr, FILE_BEGIN) &&
+              ReadFile(m_hDrive, rawBuf, bytes, &bytesRead, nullptr) && bytesRead == bytes;
+    if (!ok)
+    {
+        CString msg;
+        msg.Format(_T("ReadFile failed at sector %llu (read %u of %u bytes). Error: %u"),
+                   sectorIndex, bytesRead, bytes, ::GetLastError());
+        SetError(msg);
+        VirtualFree(rawBuf, 0, MEM_RELEASE);
+        return false;
+    }
+
+    buffer.assign(static_cast<BYTE*>(rawBuf), static_cast<BYTE*>(rawBuf) + bytes);
     VirtualFree(rawBuf, 0, MEM_RELEASE);
     return true;
 }

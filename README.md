@@ -1,18 +1,86 @@
 ﻿# DiskForge
 
-A Windows MFC application that lets you browse raw disk sectors on physical drives.
+A Windows MFC application for exploring, recovering from and repairing physical disks at the raw-sector level.
+Its window is built on the NewTest MFC framework (ribbon, Outlook-style tools bar, caption bar, docking
+Properties / Output / Sector View panes), and its centre is the **System Browser**.
+
+The registry and process tools that used to live inside DiskForge now have their own repositories - see
+[Related Tools](#related-tools).
+
+## System Browser
+
+The System Browser walks a disk the way the data is laid out on it. Expand a disk in the left-hand tree:
+
+```
+Disk 0 - Samsung SSD (465.76 GB)
+  Partition Table (GPT)
+    #3  Basic data partition  -  NTFS  -  465 GB  [C:]
+      Boot Record (NTFS)
+        Master File Table ($MFT)          <- File Allocation for NTFS
+          File System (\)
+            Users
+            OldStuff  (deleted)
+            Orphaned deleted files
+```
+
+- **Partition Table** - MBR (including logical partitions inside an extended partition) or GPT, detected the
+  same way as the Partition Table tool. Each partition shows the filesystem found in its first sector and its
+  mounted drive letter. A disk formatted without a partition table (a "superfloppy" USB stick) shows one
+  whole-disk volume.
+- **Boot Record** - every BIOS Parameter Block field with its byte offset and meaning (FAT12/16/32, exFAT, NTFS).
+- **File Allocation** - the structure that tracks which clusters are in use:
+  - FAT12/16/32: the File Allocation Table - copies, size, entry width, used / free / bad clusters, FSInfo hints
+  - exFAT: the Allocation Bitmap and FAT
+  - NTFS: the Master File Table - location, record size, fragments, live and deleted record counts, and
+    used/free clusters from `$Bitmap`
+- **File System** - the folder tree and a file list with live **and deleted** entries. Deleted entries are shown
+  in red with a delete overlay, and each one gets a **Recoverable** verdict and a note explaining it:
+
+  | Verdict | Meaning |
+  |---------|---------|
+  | Yes - excellent | NTFS file small enough to be stored inside its MFT record; it comes back exactly |
+  | Yes - good | Every cluster the file used is still free, so nothing has overwritten it |
+  | Partially | Some of its clusters have been reused by other files; parts of the output will contain other data |
+  | Unlikely | Most clusters reused, the file is compressed, or (exFAT) its fragment chain is gone |
+  | No | All clusters reused, nothing recorded, or an EFS-encrypted file |
+
+  How each filesystem is read:
+  - **FAT12/16/32** - directory entries marked deleted (0xE5). Long file names are reassembled for deleted
+    entries too, and the overwritten first character of the 8.3 name is reconstructed from the LFN checksum.
+    FAT clears a deleted file's cluster chain, so recovery assumes the file was contiguous from its first
+    cluster and checks those clusters are still free in the FAT. Deleted folders can be opened if their
+    cluster still holds a directory.
+  - **exFAT** - File / Stream / Name entry sets with the in-use bit cleared. Contiguous files (NoFatChain) keep
+    their full extent, so they are judged against the Allocation Bitmap exactly.
+  - **NTFS** - a deleted file disappears from its folder's index but its MFT record survives until reused, so
+    the whole MFT is scanned once (on a background thread, with progress on the tree node and status bar) and
+    the folder tree is rebuilt from each record's `$FILE_NAME` parent reference. Data runs (including
+    attribute lists and fragmented files) are checked against `$Bitmap`. Deleted entries whose parent folder
+    record has been reused are collected under **Orphaned deleted files**.
+- **Recover Files** (ribbon, context menu or Tools bar) copies the selected files or folders - live or deleted,
+  folders recursively - into a folder you choose, keeping their timestamps. It only ever writes to the
+  destination; if that folder is on the same partition being recovered from, DiskForge warns first, since
+  saving there can overwrite the deleted data before it is read. A log of every file goes to the Output pane.
+- **Show deleted files / Deleted files only** filter the browser; **Show record / Show data** jump the Sector
+  View to an entry's directory entry or MFT record, or to its first data sector.
+- **Open Disk Image** browses a raw image file (for example one saved by Disk Copy) the same way, read-only.
+  `DiskForge.exe <image>` opens one from the command line.
+- Implemented in `FileSystem.h/.cpp` (shared interface, detection, run-based recovery), `FatFileSystem`,
+  `ExFatFileSystem`, `NtfsFileSystem` (parsers), `DiskForgeDoc` (browser model), `BrowserTreeView` /
+  `BrowserListView` (the two splitter panes) and `VolumeMap` (drive letters and the same-volume check).
+  None of it opens a disk for writing.
 
 ## Features
 
 - **Enumerates all physical drives** (PhysicalDrive0..N) on the system
 - **Drive info display** — model, capacity, sector size, total sector count
-- **Hex viewer** with dark theme showing:
+- **Sector View pane** - hex viewer with dark theme that follows the System Browser selection, showing:
   - 64-bit byte offset column
   - 16-byte hex dump with mid-group spacing
   - ASCII representation column
   - Byte-level click selection
   - Smooth mouse-wheel + keyboard scrolling
-- **Sector navigation** — First, Prev, Next, Last, and direct jump-to-sector
+- **Sector navigation** — First, Prev, Next, Last, and direct jump-to-sector (LBA box on the ribbon, decimal or 0x hex)
 - **Partition table viewer** (read-only) — click **Partitions...** once a drive is open to see:
   - Automatic **MBR** or **GPT** detection (via the protective-MBR type 0xEE check)
   - MBR: all 4 primary entries, plus logical partitions inside an extended partition (EBR chain walk)
@@ -58,7 +126,7 @@ A Windows MFC application that lets you browse raw disk sectors on physical driv
   - **Known false-positive case, called out rather than hidden**: NTFS keeps a *backup* copy of its boot sector at a volume's very last sector, which carries the same signature and describes the same volume. The scanner can legitimately report this as a second hit; when a candidate's reported size would extend past the physical disk, the size is shown as "(unknown)" rather than trusted, but the hit itself is still reported since the signature match is real
   - Runs on a background thread with progress and Stop, like the other scan features
   - Implemented in `LostPartitionScanner.h/.cpp` (pure read-only engine) and `LostPartitionDialog.h/.cpp` (UI)
-- **Recover Deleted Files** (read-only against the source disk) — click **Recover Files...** to browse a FAT32 volume's directory tree, including deleted entries, and recover individual files:
+- **FAT32 Recovery (classic dialog)** (read-only against the source disk) — the original single-volume FAT32 recovery dialog, still available from the ribbon. The System Browser above supersedes it and also covers FAT12/16, exFAT and NTFS:
   - **FAT32 only in this pass.** Not FAT12, FAT16, exFAT, or NTFS - each has different enough on-disk structures that supporting them well needs its own dedicated pass; bolting them onto one reader risked getting all of them wrong. exFAT/NTFS support could follow the same architecture later
   - Reads raw LBAs directly, so it works whether or not Windows has mounted the volume or shows it as "RAW" - as long as the FAT32 metadata is still physically present. It does **not** help after a full reformat with a different filesystem, which overwrites that metadata; recovering after that needs file-signature carving through raw unallocated space, a different technique not implemented here
   - Full long-filename (LFN) reconstruction with checksum verification, cluster-chain walking via the FAT table, and a lazy-loaded tree view so large volumes don't require walking the whole directory structure up front
@@ -67,13 +135,7 @@ A Windows MFC application that lets you browse raw disk sectors on physical driv
   - Recovery always writes to a **new** file the user chooses via Save As - never back to the source disk
   - Implemented in `Fat32Reader.h/.cpp` (the parser) and `FileRecoveryDialog.h/.cpp` (UI)
 
-### Utilities
-- **File Unlocker** — click **File Unlocker...** to find which process(es) currently have a chosen file open/locked, and optionally terminate them to release it:
-  - A **completely different subsystem** from every other feature in this app: it works at the process/file-handle level via the Windows Restart Manager API (`RmStartSession`/`RmRegisterResources`/`RmGetList` - the same mechanism behind Explorer's own "This file is open in another program" dialog), and never touches disk sectors or partition tables at all
-  - Its only "write" is terminating another process, which the dialog always confirms first - listing exactly which process(es) and PIDs are about to be closed and warning that unsaved work in them will be lost
-  - **Refuses to terminate a short list of core Windows processes** (`csrss.exe`, `wininit.exe`, `winlogon.exe`, `services.exe`, `lsass.exe`, `smss.exe`, `System`, `Registry`) even if requested, since force-killing those can crash or destabilize the whole system - this check lives in the engine itself (`FileUnlocker::IsCriticalSystemProcess`), not just the UI, so it can't be bypassed by a different call path later. It also always refuses to terminate this app's own process
-  - This is a genuine safety floor, not a complete "important processes" list - killing *any* process can lose unsaved work in it, which is why the confirmation dialog applies regardless of which process is targeted
-  - Implemented in `FileUnlocker.h/.cpp` (the engine) and `FileUnlockerDialog.h/.cpp` (UI)
+### Disk Tools
 - **Disk Health / S.M.A.R.T.** (read-only) — click **Disk Health...** to check a drive's own self-reported health:
   - Uses `IOCTL_STORAGE_PREDICT_FAILURE` (a modern, broadly-supported "is this drive predicting its own failure" flag) as the primary signal
   - Additionally attempts the classic legacy SMART attribute table (via the well-known "Disk Failure Prediction" IOCTLs) for a detailed attribute list (ID, current/worst normalized values, raw value) when the driver/controller supports it, plus current temperature when reported
@@ -101,47 +163,28 @@ A Windows MFC application that lets you browse raw disk sectors on physical driv
   - Same write discipline as the rest of the app: system-drive protection, volume locking/dismounting before any raw write, and a confirmation gate before applying
   - Implemented in `PartitionEditor.h/.cpp` (the third module with `GENERIC_WRITE` access), `PartitionEditDialog.h/.cpp` (main UI), and `ExtendPartitionDialog.h/.cpp` (the extend sub-dialog). Required a small additive extension to `PartitionEntry` (`PartitionParser.h/.cpp`) to carry raw GUID/attribute bytes and each entry's on-disk slot index
   - `VolumeLockHelper.h/.cpp` - the volume lock/dismount logic was extracted out of `DiskCopyEngine` into this shared module (also fixing a gap where `MbrGptConverter`'s writes weren't locking volumes first) so every write-capable feature uses the identical, single-source-of-truth safety mechanism
-- **Startup Manager** — click **Startup Manager...** to view, add, delete, and enable/disable Windows startup registry entries:
-  - Reads all four startup locations: `HKCU\...\Run`, `HKLM\...\Run`, `HKCU\...\RunOnce`, and `HKLM\...\RunOnce`
-  - Shows each entry's name, command, enabled/disabled status, registry hive (HKCU/HKLM), and key type (Run/RunOnce) in a sortable list
-  - **Enable/Disable** toggles the entry's `Explorer\StartupApproved\Run` binary flag (byte `0x02` = enabled, `0x03` = disabled) — the same mechanism Task Manager uses; the entry stays in the registry so it can be re-enabled
-  - **Add** opens a sub-dialog to create a new startup entry: name, command (with file browser), choice of Current User (HKCU) or All Users (HKLM), and an optional Run Once flag
-  - **Delete** removes the value from the Run/RunOnce key and also clears any residual `StartupApproved` entry, prompting for confirmation first
-  - RunOnce entries cannot be enabled/disabled (they self-delete on first run, so there is nothing to toggle), and the button is grayed accordingly
-  - Implemented in `StartupManagerDialog.h/.cpp` (contains both the main `CStartupManagerDialog` and the `CAddStartupEntryDialog` sub-dialog)
-- **Registry Scanner** — click **Registry Scanner...** to find and optionally remove stale registry entries that point to missing files:
-  - **15 scan categories** (each independently selectable via a checkbox):
-    - **Application Paths** — `HKLM\App Paths` subkeys whose default-value executable is missing
-    - **Browser Helper Objects** — `HKLM\…\Browser Helper Objects` CLSIDs whose `InprocServer32` DLL is missing
-    - **File Extensions** — `HKCR` extension keys whose registered ProgID no longer exists
-    - **Firewall Rules** — `HKLM\…\FirewallRules` values whose `App=` path no longer exists
-    - **Fonts** — `HKLM\…\Fonts` values whose font file (relative to `%SystemRoot%\Fonts\` or absolute) is missing
-    - **Help Files** — `HKLM\SOFTWARE\Microsoft\Windows\Help` values whose `.chm`/`.hlp` path is missing
-    - **Installers (Obsolete Software)** — Uninstall subkeys whose `InstallLocation` directory no longer exists on disk
-    - **Interface (COM)** — `HKCR\CLSID` entries with a `LocalServer32` whose executable is missing (System32 entries skipped)
-    - **MUI Cache** — `HKCU\…\MuiCache` entries whose executable path (after stripping `.FriendlyAppName` / `.ApplicationCompany` suffixes) is missing
-    - **Missing Shared DLLs** — `HKLM\SharedDLLs` values whose DLL file path no longer exists
-    - **Obsolete Software** — `HKCU`/`HKLM` Uninstall subkeys whose `UninstallString` executable is missing (MSI/system executables such as `msiexec.exe` are automatically skipped to avoid false positives)
-    - **Open With Apps** — `HKCR\Applications\*\shell\open\command` entries whose executable is missing
-    - **Run At Startup** — `HKCU`/`HKLM` Run and RunOnce values whose executable path no longer exists on disk
-    - **Sound Events** — `HKCU\AppEvents\Schemes` entries whose `.wav` file path is missing
-    - **Windows Services** — `HKLM\SYSTEM\…\Services` ImagePath executables that are missing (handles `\SystemRoot\`, `\??\`, `%SystemRoot%\`, and bare-path prefixes; skips System32)
-  - Scan runs on a **background thread** with a live progress bar and phase label; the UI stays responsive and all action buttons disable while scanning
-  - Results list shows: category, name/key, problem description, hive source (HKCU/HKLM), and status (Pending/Fixed/Ignored)
-  - **Fix Selected** — removes the selected entries from the registry after confirmation
-  - **Fix All** — removes all pending entries after confirmation
-  - **Backup & Fix All** — saves a proper UTF-16 LE Windows `.reg` file (double-clickable to restore) first, then fixes all entries; aborts if the backup write fails so nothing is changed without a valid backup
-  - **Ignore Selected** — hides entries from the list for the current session without removing them
-  - Registry path extraction handles quoted paths (`"C:\...\app.exe" /args`), unquoted paths, and environment-variable expansion (`%SystemRoot%`, etc.)
-  - Fix method is type-aware: value-only issues (startup, shared DLL) delete just the value; subkey issues (uninstall, app path) use `RegDeleteTree` to remove the whole orphaned subkey
-  - Implemented in `RegistryScanner.h/.cpp` (scanning engine + .reg-file backup writer) and `RegistryScannerDialog.h/.cpp` (UI)
 - **Wipe Disk / Partition** (write-capable) — click **Wipe Disk...** to overwrite a whole disk or a single partition:
   - Patterns: zeros (1 pass), pseudo-random data (1 pass), zeros-then-random (2 passes), or random x3 (3 passes)
   - **Honesty note, surfaced in the UI and worth restating here**: this is a straightforward overwrite tool, not a certified secure-erase implementation. It doesn't claim to meet NIST 800-88, DoD 5220.22-M, or any other sanitization standard; it doesn't attempt to reach HPA/DCO-hidden regions or already-remapped-but-unerased SSD flash blocks; and its "random" pass uses the standard C library PRNG (seeded from `GetTickCount()`), not a cryptographic one. For genuinely sensitive data, a drive's own ATA/NVMe Secure Erase or Sanitize command (not implemented here) is the more thorough option
   - Same write discipline as everything else: system-drive protection, volume locking/dismounting before any write, background thread with progress/cancel, and a type-to-confirm gate (`ERASE PhysicalDriveN` for whole-disk, `WIPE PhysicalDriveN PART <n>` for a specific partition)
   - Implemented in `WipeEngine.h/.cpp` and `WipeDiskDialog.h/.cpp` (UI)
+- **User interface (NewTest framework)** - `CWinAppEx` / `CFrameWndEx` with a ribbon (Home: disks, System Browser,
+  Sector View, tools; View: panes and application look), an Outlook-style Tools bar, a caption bar, dockable
+  Properties / Output / Sector View panes that can float or auto-hide, a ribbon status bar, and the eleven
+  application looks (Office 2007 styles, Windows 7, Visual Studio 2005/2008, ...). Layout and look are saved per user
 - **Resizable window** with a sensible minimum size
 - **UAC elevation** — the manifest automatically requests Administrator rights at launch
+
+## Related Tools
+
+These used to be DiskForge features. They have nothing to do with disks, so each is now a separate program
+with its own repository, solution and build pipeline:
+
+| Tool | What it does |
+|------|--------------|
+| **File Unlocker** | Finds and closes the processes locking a file or folder; adds "Unlock with File Unlocker" to Explorer's right-click menu |
+| **Startup Manager** | Views, adds, deletes and enables/disables the programs Windows starts at logon (HKCU/HKLM Run and RunOnce) |
+| **Registry Cleaner** | Finds registry entries pointing to missing files in 15 categories and removes them, with a `.reg` backup |
 
 ## Requirements
 
@@ -165,15 +208,15 @@ Or from a Developer Command Prompt / PowerShell:
 
 ## How to Run
 
-The application **must be run as Administrator** to access raw physical disk sectors.
+DiskForge **must run as Administrator** to read raw disk sectors; its manifest requests elevation. Disk images
+can be browsed with **Open Disk Image** without touching a physical disk.
 
-1. Right-click `DiskForge.exe` → **Run as administrator**  
-   (or the UAC prompt will appear automatically)
-2. Click **Refresh** to enumerate all physical drives
-3. Select a drive from the drop-down list
-4. Click **Open Drive**
-5. The first sector (sector 0 — the MBR or GPT header) loads automatically
-6. Use **Prev / Next / First / Last** buttons or type a sector number and click **Go**
+1. Start `DiskForge.exe` (accept the UAC prompt). Every physical disk appears in the System Browser
+2. Expand a disk: **Partition Table -> partition -> Boot Record -> File Allocation -> File System**
+3. Select items to see their fields in the list and the Properties pane; the Sector View shows the matching sector
+4. In a folder, select deleted files (red) and click **Recover Files** to copy them to a folder on another disk
+5. Disk tools (Partition Table, Disk Copy, Bad Sector Scan, Disk Health, MBR to GPT, Partition Editor, Wipe,
+   UEFI Boot, Lost Partitions) are on the ribbon and the Tools bar
 
 ## Project Structure
 
@@ -181,9 +224,23 @@ The application **must be run as Administrator** to access raw physical disk sec
 |------|-------------|
 | `DiskForge.sln` | Visual Studio 2022 solution |
 | `DiskForge.vcxproj` | MSBuild project (x64, v143 toolset) |
-| `DiskForge.cpp/h` | MFC `CWinApp` application class |
-| `DiskForgeDlg.cpp/h` | Main dialog — all controls created programmatically |
-| `DiskManager.cpp/h` | Win32 disk I/O: `CreateFile`, `DeviceIoControl`, sector-aligned `ReadFile` |
+| `DiskForge.cpp/h` | `CWinAppEx` application class (NewTest framework: look, context menus, tooltips, saved layout) |
+| `MainFrm.cpp/h` | `CFrameWndEx` main frame: ribbon, Tools bar, caption bar, docking panes, all commands |
+| `DiskForgeDoc.cpp/h` | System Browser model: disks, partition tables, browser nodes, cached folder listings |
+| `BrowserTreeView.cpp/h` | Left pane: the Disk -> Partition Table -> ... -> File System tree; runs the NTFS MFT scan thread |
+| `BrowserListView.cpp/h` | Right pane: structure fields, partition entries, or files with deleted / recoverable columns |
+| `FileSystem.cpp/h` | `IFileSystem` interface, filesystem detection, run-based recovery helpers |
+| `FatFileSystem.cpp/h` | FAT12/16/32 parser for the System Browser (deleted entries, LFN repair, recoverability) |
+| `ExFatFileSystem.cpp/h` | exFAT parser (entry sets, allocation bitmap, NoFatChain extents) |
+| `NtfsFileSystem.cpp/h` | NTFS parser (MFT scan, fixups, data runs, attribute lists, `$Bitmap` checks) |
+| `VolumeMap.cpp/h` | Maps drive letters to disk extents (partition labels, same-volume recovery warning) |
+| `HexPane.cpp/h` | Sector View docking pane hosting `CHexView` |
+| `OutputWnd.cpp/h` | Output docking pane (log) |
+| `PropertiesWnd.cpp/h` | Properties docking pane (read-only property grid) |
+| `ViewTree.cpp/h` | Tools bar page trees (each item sends a command) |
+| `ShellIcons.cpp/h` | Windows stock icons for the ribbon, tree and list |
+| `res\` | Application icon and the NewTest framework's pane / Outlook-bar / caption-bar images |
+| `DiskManager.cpp/h` | Win32 disk I/O: `CreateFile`, `DeviceIoControl`, sector-aligned `ReadFile` / multi-sector `ReadSectors`; also opens raw image files |
 | `HexView.cpp/h` | Custom GDI hex-dump control with double-buffering |
 | `PartitionParser.cpp/h` | Read-only MBR/GPT partition table parser (uses `CDiskManager::ReadSector` only) |
 | `PartitionDialog.cpp/h` | Modal dialog listing parsed partitions, with jump-to-sector |
@@ -211,14 +268,8 @@ The application **must be run as Administrator** to access raw physical disk sec
 | `LostPartitionDialog.cpp/h` | UI for Lost Partition Search |
 | `Fat32Reader.cpp/h` | Read-only FAT32 parser: boot sector, FAT chain walking, directory listing (incl. deleted entries), file recovery |
 | `FileRecoveryDialog.cpp/h` | UI for browsing a FAT32 volume and recovering files |
-| `FileUnlocker.cpp/h` | Finds/terminates processes locking a file via Restart Manager; refuses to kill core system processes or this app itself |
-| `FileUnlockerDialog.cpp/h` | UI for the File Unlocker feature |
-| `StartupManagerDialog.cpp/h` | Startup Manager: view/add/delete/enable/disable HKCU+HKLM Run and RunOnce registry entries; contains both the main dialog and the Add-Entry sub-dialog |
-| `RegistryScanner.cpp/h` | Registry scanner engine: checks startup, uninstall, app-path, and shared-DLL entries for missing files; fixes by deleting values/subkeys; backup writer outputs UTF-16 LE .reg format |
-| `RegistryScannerDialog.cpp/h` | UI for the Registry Scanner; background scan thread posts WM_RS_PROGRESS / WM_RS_COMPLETE messages back to the dialog |
-| `SidebarButton.cpp/h` | Custom owner-drawn `CSidebarButton` control used for the left-sidebar navigation buttons |
 | `pch.cpp/h` | Pre-compiled header |
-| `DiskForge.rc` | Minimal RC resource file |
+| `DiskForge.rc` | Resources: dialogs, menus, strings, icons and bitmaps |
 | `resource.h` | Resource ID definitions |
 | `DiskForge.manifest` | DPI awareness + Win10/11 compatibility manifest |
 
